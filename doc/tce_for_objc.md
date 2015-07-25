@@ -16,7 +16,7 @@ tce为了丰富移动终端的覆盖，对ios设备的提供objc的开发支持�
 
 ####1.接口定义  sns.idl
 	
-	```
+```
 	module sns{
 		interface BaseServer{
 		string datetime();
@@ -46,7 +46,7 @@ tce为了丰富移动终端的覆盖，对ios设备的提供objc的开发支持�
 		void onUserOffLine(string user_id,string gws_name);
 		void postMessage(string target_user_id,Message_t msg);
 	};
-}
+	}
 ```
 
 ####2.objc代码 
@@ -77,6 +77,7 @@ tce为了丰富移动终端的覆盖，对ios设备的提供objc的开发支持�
 	}
 	@end
 ```
+
 2.初始化Rpc 
 
 ```
@@ -93,6 +94,7 @@ tce为了丰富移动终端的覆盖，对ios设备的提供objc的开发支持�
 	    [[self->_prxServer conn] setToken:CURRENT_USER_ID];
 	}
 ```
+
 3.发送通消息
 
 ```
