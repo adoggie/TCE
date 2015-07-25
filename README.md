@@ -41,14 +41,20 @@ Tce实现RPC的内容：
  3. websocket  (http)
  
 
-更多.. 
+Documents.. 
 ----------------
- $TCE/doc/tce.md
- 
 
-#scott  shanghai china
-#86-13916624477 qq:24509826 msn: socketref@hotmail.com
-#
+ <a href="./doc/tce.md">doc/tce.md</a>
+ 
+ <a href="./doc/tce应用示例_python.md">doc/tce应用示例_python.md</a>
+
+
+###More...
+----------------------------
+	86-13916624477 
+	qq:24509826 msn: 
+	socketref@hotmail.com
+
 
 
 
