@@ -1,0 +1,78 @@
+tce
+--------------
+TINY COMMUNICATION ENGINE
+
+https://sourceforge.net/projects/adoggie-tce/files/tcelib/
+
+
+#scott  shanghai china
+#86-13916624477 qq:24509826 msn: socketref@hotmail.com
+#
+
+features
+=======
+1. idl maping support py,c++,java,actionscript
+2. easy rpc 
+3. manay calltypes:
+    normal-call (twoway) - user initial call and wait until  return ,thread will be blocked .
+    oneway-call        - return immediately after initialing call
+    timeout-call       - waiting time specified,thread  will be  unbocked if it reach time.
+    async-call         - thread nerver be blocked，return value passed into user function at sometime.
+    reversed-call      - establishing one connection，endpoints can setup owner service interfaces for another.
+                通常互联网应用时，服务器与客户机链接必须由客户机发起，客户机发起者可以rpc方式调用服务器上的servant服务
+                reversed-call实现了了在客户机建立的连接上，由服务器发起rpc服务请求到客户机上，同样的客户机提供servant对象
+                基于socket流消息到Rpc函数接口级调用的差别
+
+
+steps:
+=======
+1. create your idl, to see <tce1.txt>
+2. compiling idl
+    python tce2py.py
+    it will create app.py
+3. execute test_s.py , test_c.py
+    illustrating how to rpc
+
+requirements:
+==============
+1.python 2.6 above
+2.ply 3.4
+
+
+enjoy!
+
+
+revisions:
+===============
+2012.9.10 21:35  v0.1.0
+1. fixed bugs about reverse-call, oneway call ...
+2. testing all api,it's okay
+
+docs:
+------
+1. idl intr
+    struct like c
+    builtins: byte,char,short,int,long,float,double,string,bool
+    containers:  sequence<type>  as array ( std::vector<> in c++)
+                dictionayr<type1,type2> as hash (std::map<>  in c++)
+    interfaces : include some callable funcitons in service end.
+
+
+mappings:
+-----------
+1. actionscript
+    python tce2as.py -i tce1.txt -d actionscript 
+
+2. python 
+    python tce2as.py -i tce1.txt -o python/app.py
+
+3. c++
+	python tce2cpp.py -i tce1.txt -o tce1.h -if 0 
+	
+4. java 
+	python tce2java.py -i tce1.txt -o /Users/socketref/ply/code/java -k test
+	
+
+
+
+
