@@ -12,13 +12,12 @@ tce为了丰富移动终端的覆盖，对ios设备的提供objc的开发支持�
 		服务器代码:   #tce/test/python/examples/sendmessage
 		样例IDL:  	$tce/idl/sns.idl   
 
-####编码设计
+###编码设计
 
-#####1.接口定义  sns.idl
+####1.接口定义  sns.idl
 	
 	```
 	module sns{
-
 		interface BaseServer{
 		string datetime();
 	};
@@ -50,51 +49,49 @@ tce为了丰富移动终端的覆盖，对ios设备的提供objc的开发支持�
 }
 ```
 
-#####2.objc代码 
+####2.objc代码 
 
 1.定义通知消息接收接口 
 
 ```
-@interface MyTerminal:ITerminal
-	@property ViewController * viewController;
-@end
+	@interface MyTerminal:ITerminal
+		@property ViewController * viewController;
+	@end
 
-@implementation MyTerminal
-- (instancetype)init:(ViewController *)vc{
-    self = [super init];
-    if (self) {
-        self.viewController = vc;
-    }
-    return self;
-}
+	@implementation MyTerminal
+	- (instancetype)init:(ViewController *)vc{
+    	self = [super init];
+	    if (self) {
+	        self.viewController = vc;
+	    }
+    	return self;
+	}
 
-- (void)onMessage:(Message_t *)message context:(RpcContext *)ctx {
-    NSLog(@"recieved message:%@",message.content);
-
-    dispatch_queue_t mainQueue= dispatch_get_main_queue();
-    dispatch_sync(mainQueue, ^{
-        [self.viewController.edtRecieved setText:message.content] ;
-    });
-}
-@end
-
+	- (void)onMessage:(Message_t *)message context:(RpcContext *)ctx {
+	    NSLog(@"recieved message:%@",message.content);
+	
+	    dispatch_queue_t mainQueue= dispatch_get_main_queue();
+	    dispatch_sync(mainQueue, ^{
+	        [self.viewController.edtRecieved setText:message.content] ;
+	    });
+	}
+	@end
 ```
 2.初始化Rpc 
 
 ```
-NSString* CURRENT_USER_ID = @"A1004";
-
--(void)initRpc{
-	[[RpcCommunicator instance] initialize];
-    self->_adapter = [[RpcCommunicator instance] createAdapter:@"adapter"];
-    MyTerminal *servant = [[MyTerminal alloc] init:self];
-    self->_prxServer = [IMessageServerProxy createWithInetAddressHost:@"192.168.199.176" andPort:12002];
-    [self->_adapter addServant:servant];
-    [self->_adapter addConnection:[self->_prxServer conn]];
-    [[RpcCommunicator instance] addAdapter:self->_adapter];
-    [[self->_prxServer conn] setToken:CURRENT_USER_ID];
-}
+	NSString* CURRENT_USER_ID = @"A1004";
 	
+	-(void)initRpc{
+		[[RpcCommunicator instance] initialize];
+	    self->_adapter = [[RpcCommunicator instance] createAdapter:@"adapter"];
+	    MyTerminal *servant = [[MyTerminal alloc] init:self];
+	    self->_prxServer = [IMessageServerProxy createWithInetAddressHost:@"192.168.199.176" andPort:12002];
+	    [self->_adapter addServant:servant];
+	    [self->_adapter addConnection:[self->_prxServer conn]];
+	    [[RpcCommunicator instance] addAdapter:self->_adapter];
+	    [[self->_prxServer conn] setToken:CURRENT_USER_ID];
+	}
 ```
 3.发送通消息
 
