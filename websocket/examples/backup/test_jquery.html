@@ -1,0 +1,123 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+	<meta charset="gb2312">
+    <title></title>
+	<link rel="stylesheet" href="../scripts/jquery.mobile-1.2.0.css" />
+	<script src="../scripts/jquery-1.8.3.js"></script>
+	<script src="../scripts/jquery.mobile-1.2.0.js"></script>
+	<link href="../styles/main.css" rel="stylesheet" />
+	<script src="../scripts/main.js"></script>
+</head>
+
+<script>
+	$(document).ready(function(){
+
+		$("#btnChangePage").click(function() {
+			$.mobile.changePage("#main", {transition:"flip"});
+		});
+
+		$('#btnAddItem').click(function(){
+
+			//$('#listfilter').append('<li><a href=\"ray.html\">啊关</a></li>');
+			$('#listfilter').append("<ul data-role='listview' datainset='true' id='theList'><li>Item One</li><li>Item\
+			Two</li></ul>");
+			$('#listfilter').listview('refresh');
+			$('#theList').listview('refresh');
+		});
+	});
+
+
+</script>
+<body >
+<!--data-fullscreen="true"-->
+
+<div data-role="page" id="main">
+	<div data-role="header" data-position="fixed" >
+		<a href="#page2" data-icon="scripts/images/ajax-loader.gif">subpage</a>
+		<h1>Main  Windows</h1>
+	</div>
+	<div data-role="content">
+		<p>
+			_lr_action = { }
+			for _k, _v in _lr_action_items.items():
+			for _x,_y in zip(_v[0],_v[1]):
+			if not _x in _lr_action:  _lr_action[_x] = { }
+			_lr_action[_x][_k] = _y
+			del _lr_action_items
+		</p>
+	</div>
+	<div data-role="footer">
+		<div data-role="navbar" >
+			<ul>
+				<li><a href="#page2" class="ui-btn-active">secondpage</a></li>
+				<li><a href="#page3">form</a></li>
+				<li><a href="#page2">fourthpage</a></li>
+			</ul>
+		</div>
+	</div>
+
+</div>
+
+<div data-role="page" id="page2" data-add-back-btn="true" data-back-btn-text="返回">
+	<div data-role="header">
+		<h1>Page2</h1>
+	</div>
+	<div data-role="content">
+		<input id="btnChangePage" type="button" data-ref="back" value="change page" data-icon="scripts/images/ajax-loader.gif"/>
+
+		<a href="" data-ref="back">goto MainPage</a>
+		<p>
+		this is second page!
+		</p>
+
+		<ul id="listfilter" data-role="listview" data-inset="true" data-filter="true">
+			<li><a href="ray.html">Raymond Camden</a></li>
+			<li><a href="scott.html">Scott Stroz</a></li>
+			<li><a href="todd.html">Todd Sharp</a></li>
+			<li><a href="dave.html">Dave Ferguson</a></li>
+
+		</ul>
+
+
+		<ul data-role="listview" data-inset="false" data-split-icon="delete">
+			<li data-role="list-divider">section 1</li>
+			<li >first
+				<ul>
+					<li>scott <span class="ui-li-count">4</span></li>
+					<li>amao</li>
+					<li>aguan</li>
+				</ul>
+			</li>
+			<li>
+				<a href=""><img src="../scripts/images/ajax-loader.gif" class="ui-li-icon">second</a>
+				<a href="foo.html" >Deletxxxe</a>
+			</li>
+			<li  data-role="list-divider">section 2</li>
+			<li><a href="">third</a></li>
+			<li><a href="">forth</a></li>
+		</ul>
+	</div>
+	<div data-role="footer">
+		<a href="">button1</a>
+		<a href="">button2</a>
+	</div>
+</div>
+
+
+<div data-role="page" id="page3" data-add-back-btn="true" data-back-btn-text="返回">
+	<div data-role="header">
+		<h1>Form test</h1>
+	</div>
+	<div data-role="content">
+		<input id="btnAddItem" type="button" value="add item" data-icon="scripts/images/ajax-loader.gif"/>
+		<ul id="list2" data-role="listview" data-inset="true">
+			<li><a href="">third</a></li>
+			<li><a href="">forth</a></li>
+		</ul>
+	</div>
+</div>
+
+
+</body>
+</html>

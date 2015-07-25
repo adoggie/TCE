@@ -1,0 +1,18 @@
+package
+{
+	import tce1.postoffice;
+	import tce1.*;
+	import tcelib.*;
+	
+	public class MyInstance extends postoffice
+	{
+		public function MyInstance()
+		{
+			super();
+		}
+		
+		override public function sayHello(greeting:String,pigs:int,dogs:Number,ctx:RpcContext = null):String{
+			return "as.inst";
+		}	
+	}
+}

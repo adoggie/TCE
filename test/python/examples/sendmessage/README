@@ -1,0 +1,9 @@
+sendmessage
+演示 如何在android手机与网页实现消息传送，实现即时通信的基础消息交换功能.
+
+
+启动两个gws:
+ 	gwserver.py gwserver   # socket 接入
+ 	gwserver.py gwserver_ws  #websocket 接入
+
+

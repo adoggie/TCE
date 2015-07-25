@@ -1,0 +1,101 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+	<meta charset="utf-8">
+    <title></title>
+	<script src="scripts/jquery-1.8.3.js"></script>
+	<script src="scripts/jquery.utils.min.js"></script>
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" >
+</head>
+
+<script src="tce.js"></script>
+<script src="sns.js" charset="utf-8" ></script>
+
+<!--<script src="scripts/main.js" charset="utf-8" ></script>-->
+
+
+<script>
+    var CURRENT_USER_ID='A1002';
+    function debug_info(text){
+        $('#info').append('<br>' + new Date().toLocaleTimeString() +' ' + text);
+    }
+
+    function MyTerminal(){
+        this.onMessage = function(message,ctx){
+            debug_info('ITerminal::onMessage:' + message);
+            debug_info('message sender:'+message.sender_id +' content:'+message.content);
+        };
+    }
+    MyTerminal.prototype = new ITerminal();
+
+    // server to see $tce/python/examples/simple/server.py
+
+	var servant = new MyTerminal();
+	RpcCommunicator.instance().init();
+	var prxServer = IMessageServerProxy.create('ws://localhost:12001');
+
+	var adapter = RpcCommunicator.instance().createAdapter("test");
+	adapter.addServant(servant);
+    prxServer.conn.attachAdapter(adapter);  // 主动接收server推送的消息
+
+    function sendMessage(){
+        // sequence<byte> : ArrayBuffer()
+        // extra : {attr:value,..}
+        prxServer.conn.setToken(CURRENT_USER_ID);
+
+        var content = $('#edtContent').val();
+        if (content.length == 0){
+            alert(' content is null! ');
+            return ;
+        }
+        var target = $('#edtPeer').val();
+        var msg = new Message_t();
+        msg.sender_id = CURRENT_USER_ID;
+        msg.content = content;
+        prxServer.postMessage_async( target,msg,function(proxy,cookie){
+            debug_info('message reached!');
+        });
+    }
+
+    $(document).ready(function() {
+        $('#btnTest').click(function(e){
+            sendMessage();
+        });
+        $('#btnClear').click(function(e){
+            $('#info').html('');
+        });
+        $('#txtCurrentUserId').val(CURRENT_USER_ID);
+    });
+
+
+
+</script>
+<body >
+
+
+<p>
+    ==演示如何从页面程序发起rpc请求,将消息传送到移动设备(android,ios)或者python终端程序==
+</p>
+
+<p style="font-size: 16px;color:green;">
+    服务程序: <br>
+    $tce/test/python/sendmessage <br>
+    gateway.py, server.py <br>
+    gateway.py gwserver  <br>
+    gateway.py gwserver_ws  <br>
+    server.py
+</p>
+<span>
+
+    <label >My ID:</label> <input type="text" value="" id="txtCurrentUserId" readonly/>
+    <label for="edtContent" >Peer ID:</label> <input type="text" value="A1001" id="edtPeer"/>
+    <br><br>
+    Content Text <input id="edtContent" type="text" style="width: 400px;" value="" placeholder="your words to be sent.."/>
+    <button id="btnTest">send message</button>
+<button id="btnClear">clear</button>
+</span>
+<p id="info">
+
+</p>
+</body>
+</html>

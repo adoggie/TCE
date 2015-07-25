@@ -1,0 +1,11 @@
+
+client -> gateway -> server
+       ^^         ^^
+     socket      amqp
+
+三层数据交换方式
+gateway作为数据接入网关，负责将client的请求分派到server处理，并将server的处理结果返回到client
+
+
+
+

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="683" height="290" minWidth="955" minHeight="600"
+			    creationComplete="init()"
+			 >
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			import tce1.*;
+			
+			import tcelib.CommAdapter;
+			import tcelib.RpcConnection;
+			import tcelib.RpcConnectionEvent;
+			import tcelib.utils.HashMap;
+			
+			public var conn:RpcConnection;
+			public var adapter:CommAdapter;
+			
+			private function init():void{
+				conn = new RpcConnection();
+				adapter = new CommAdapter();
+				adapter.addServant( new MyInstance());
+				conn.attachAdapter(adapter);
+				conn.addEventListener(RpcConnectionEvent.CONNECTED,this.onConnected);
+				conn.addEventListener(RpcConnectionEvent.DISCONNECTED,this.onDisconnected);
+				onDisconnected(null);
+			}
+			
+			private function onConnected(e:RpcConnectionEvent):void{
+				txtStatus.text = "connected to server";
+			}
+			
+			private function onDisconnected(e:RpcConnectionEvent):void{
+				txtStatus.text = "disconnected";
+			}
+			
+			protected function btnConnect_clickHandler(event:MouseEvent):void
+			{
+				conn.connect('localhost',12001);
+				
+			}
+			
+			private function sayHello_asyncall(s:String,prx:postofficePrx):void{
+				txtMsg.text = s;
+			}
+			
+			private function queryMail4_asyncall(ids:Array,prx:postofficePrx):void{
+				txtMsg.text = ids.toString();
+			}
+		
+			protected function btnTest0_clickHandler(event:MouseEvent):void
+			{
+				var prx:postofficePrx = new postofficePrx( conn);
+				//prx.sayHello("zhangbin",1,2,this.sayHello_asyncall);
+				prx.queryMail4(this.queryMail4_asyncall);
+			}
+			
+			private function queryMail3_asyncall(list:Array,prx:postofficePrx):void{
+				txtMsg.text = list.toString();
+			}
+			
+			protected function btnTest1_clickHandler(event:MouseEvent):void
+			{
+				var prx:postofficePrx = new postofficePrx( conn);
+				var idname:HashMap = new HashMap();
+				idname.put(10,"scott.bin");
+				prx.queryMail3(idname,this.queryMail3_asyncall);
+				
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Button id="btnConnect" x="452" y="39" label="connect" click="btnConnect_clickHandler(event)"/>
+	<s:TextInput id="txtMsg" x="73" y="70" width="341"/>
+	<s:TextArea id="txtrich" x="28" y="124" width="386"/>
+	<s:TextInput x="72" y="40" text="localhost"/>
+	<s:Label x="28" y="42" text="Server"/>
+	<s:TextInput x="255" y="40" text="12000"/>
+	<s:Label x="214" y="45" text="port:"/>
+	<s:Label x="28" y="104" text="result return"/>
+	<s:Label x="20" y="76" text="message"/>
+	<s:Button id="btnTest0" x="452" y="71" label="test0()" click="btnTest0_clickHandler(event)"/>
+	<s:Button id="btnTest1" x="452" y="100" label="test1()" click="btnTest1_clickHandler(event)"/>
+	<s:Button id="btnTest2" x="452" y="129" label="test2()"/>
+	<s:Label id="txtStatus" x="546" y="48" text="disconnected"/>
+</s:Application>

@@ -1,0 +1,32 @@
+
+common_defs:
+  endpoints:
+    - name: mq_client
+      host: centos66
+      port: 5672
+      address: mq_client;{create:always,node:{type:queue,durable:true}}
+      type: qpid
+
+    - name: mq_server
+      host: centos66
+      port: 5672
+      address: mq_server;{create:always,node:{type:queue,durable:true}}
+      type: qpid
+
+client:
+  endpoints:
+    - name: mq_client
+      af_mode: AF_READ
+    - name: mq_server
+      af_mode: AF_WRITE
+
+  endpoint_pairs:
+    - call: mq_server
+      return: mq_client
+
+server:
+  endpoints:
+    - name: mq_client
+      af_mode: AF_WRITE
+    - name: mq_server
+      af_mode: AF_READ

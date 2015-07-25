@@ -1,0 +1,70 @@
+<SNS>
+	<InterfaceDef >
+		<if id="0" name="sns.BaseServer"/>
+		<if id="1" name="sns.ITerminalGatewayServer"/>
+		<if id="2" name="sns.Server"/>
+		<if id="3" name="sns.ITerminal"/>
+		<if id="4" name="sns.IMessageServer"/>
+	</InterfaceDef>
+
+	<VariantDef>
+		<var name="mq-host" value="centos66"/>
+		<var name="mq-port" value="5672"/>
+		<var name="gws_socket_host" value=""/>
+	</VariantDef>
+
+	<EndPoints>
+		<ep name="websocket_gateway" 	address="" type="websocket" host="{gws_socket_host}" port="12001" keyfile="" certfile=""/>
+		<ep name="socket_gateway" 	address="" type="socket" host="{gws_socket_host}" port="12002" keyfile="" certfile=""/>
+		<ep name="mq_gateway" 		address="mq_gateway;{create:always,node:{type:queue,durable:true}}" type="qpid" host="{mq-host}" port="{mq-port}"/>
+		<ep name="mq_gateway_ws" 		address="mq_gateway_ws;{create:always,node:{type:queue,durable:true}}" type="qpid" host="{mq-host}" port="{mq-port}"/>
+		<ep name="mq_server" 		address="mq_server;{create:always,node:{type:queue,durable:true}}" type="qpid" host="{mq-host}" port="{mq-port}"/>
+		<ep name="mq_gateway_broadcast" 		address="mq_gateway_broadcast;{create:always,node:{type:topic,durable:true}}" type="qpid" host="{mq-host}" port="{mq-port}"/>
+		<ep name="mq_user_event_listener" 		address="mq_user_event_listener;{create:always,node:{type:topic,durable:true}}" type="qpid" host="{mq-host}" port="{mq-port}"/>
+	</EndPoints>
+
+
+	<servers>
+		<server name="gwserver"  type="socket server">
+			<route if="sns.IMessageServer">
+				<call in="socket_gateway" out="mq_server" />
+				<return in="mq_gateway" out="socket_gateway" />
+			</route>
+			<route if="sns.ITerminal">
+				<call in="mq_gateway_broadcast" out="socket_gateway"/>
+				<call in="mq_gateway" out="socket_gateway"/>
+			</route>
+			<extra_mqs ins="mq_gateway_broadcast" outs="mq_user_event_listener"/>
+			<properties>
+				<property name="userid_check" value="true">
+					if userid_check is true, you should bind connection with user_id explicitly.
+						"con.setUserId(uid)"
+				</property>
+				<property name="listen" value="socket_gateway,mq_gateway,mq_gateway_broadcast"/>
+				<property name="loopback" value="mq_server#mq_gateway"/>
+			</properties>
+		</server>
+
+		<server name="gwserver_ws"  type="websocket server">
+			<route if="sns.IMessageServer">
+				<call in="websocket_gateway" out="mq_server" />
+				<return in="mq_gateway_ws" out="websocket_gateway" />
+			</route>
+			<route if="sns.ITerminal">
+				<call in="mq_gateway_broadcast" out="websocket_gateway"/>
+				<call in="mq_gateway_ws" out="websocket_gateway"/>
+			</route>
+			<extra_mqs ins="mq_gateway_broadcast" outs="mq_user_event_listener"/>
+			<properties>
+				<property name="userid_check" value="true">
+					if userid_check is true, you should bind connection with user_id explicitly.
+						"con.setUserId(uid)"
+				</property>
+				<property name="listen" value="websocket_gateway,mq_gateway_ws,mq_gateway_broadcast"/>
+				<property name="loopback" value="mq_server#mq_gateway_ws"/>
+			</properties>
+		</server>
+
+	</servers>
+
+</SNS>

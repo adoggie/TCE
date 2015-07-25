@@ -1,0 +1,127 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+	<meta charset="utf-8">
+    <title></title>
+	<script src="../scripts/jquery-1.8.3.js"></script>
+	<script src="../scripts/jquery.utils.min.js"></script>
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" >
+</head>
+
+<script src="../../tce.js"></script>
+<script src="sns.js" charset="utf-8" ></script>
+
+<!--<script src="scripts/main.js" charset="utf-8" ></script>-->
+
+
+<script>
+
+    function MyTerminal(){
+        this.onNotifyMessage = function(notify,ctx){
+            console.log('ITerminal::onNotifyMessage:'+notify);
+        };
+
+	    this.test1 = function(attrs,stream,ctx){
+			console.log( attrs,stream);
+		    return {'type':'story','position':'japan'};
+	    };
+
+	    this.test2 = function(attrs,stream,ctx){
+		    console.log( attrs,stream);
+		    return {1:new ArrayBuffer(40),2:new ArrayBuffer(50)};
+	    };
+
+	    this.test3 = function(stream,ctx){
+		    console.log( stream);
+		    return new ArrayBuffer(40);
+	    };
+
+	    this.test6 = function(bb,ctx){
+		    var bb = new Building_t();
+		    bb.tiles = new ArrayBuffer(20);
+		    bb.floors = [new ArrayBuffer(5),new ArrayBuffer(10)];
+		    bb.decorate = {10:new ArrayBuffer(20),11:new ArrayBuffer(30)};
+		    return bb;
+	    };
+
+    }
+    MyTerminal.prototype = new ITerminal();
+
+    // server to see $tce/python/examples/simple/server.py
+
+	var servant = new MyTerminal();
+
+	RpcCommunicator.instance().init();
+	prxctrlserver = ICtrlServerProxy.create('ws://localhost:16006');
+
+	adapter = RpcCommunicator.instance().createAdapter("test");
+	adapter.addServant(servant);
+    prxctrlserver.conn.attachAdapter(adapter);
+
+
+    function test1(){
+        prxctrlserver.register_async('scott','111111',function(result,prx,cookie){
+            console.log(result);
+        },null,{age:100,color:'0xffff00'},'this cookie');
+
+        prxctrlserver.show_async([1,2,3],function(prx,cookie){
+            console.log('show_async callback');
+        })
+        prxctrlserver.show_oneway([100,101,102]);
+
+        prxctrlserver.start_bidirection_oneway();
+    }
+
+
+    function test2(){
+//		prxctrlserver.test1_oneway( new ArrayBuffer(100),'second parameter')
+//		prxctrlserver.test1_async( new ArrayBuffer(100),'second parameter',function(prx,cookie){
+//			console.log(' returned');
+//		});
+
+//	    prxctrlserver.test3_async( 100,function(result,prx,cookie){
+//		    console.log( result,result.byteLength );
+//	    });
+
+//	    prxctrlserver.test4_async({level:'5',name:'fire'},
+//			    {5:new ArrayBuffer(30),6:new ArrayBuffer(10)},
+//			function(result,prx,cookie){
+//		        console.log( typeof(result),result);
+//	    });
+
+//	    prxctrlserver.test5_async({level:'5',name:'fire'},
+//			    {5:new ArrayBuffer(30),6:new ArrayBuffer(10)},
+//			function(result,prx,cookie){
+//				console.log( typeof(result),result);
+//		});
+
+	    var bb = new Building_t();
+	    bb.tiles = new ArrayBuffer(20);
+	    bb.floors = [new ArrayBuffer(5),new ArrayBuffer(10)];
+	    bb.decorate = {10:new ArrayBuffer(20),11:new ArrayBuffer(30)};
+
+//	    prxctrlserver.test6_async( bb,
+//			function(result,prx,cookie){
+//				console.log( typeof(result),result);
+//		});
+
+
+	    prxctrlserver.start_bidirection_oneway();
+    }
+
+    $(document).ready(function() {
+        $('#btnTest').click(function(e){
+            test2();
+        });
+    });
+
+
+
+</script>
+<body >
+
+Content Text <input id="edtContent" value=""/><br/>
+<button id="btnTest">测试开始</button>
+
+</body>
+</html>

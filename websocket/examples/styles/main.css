@@ -1,0 +1,10 @@
+.errormsg {
+	margin: .5em 0 0;
+	display: block;
+	color: #DD4B39;
+	line-height: 17px;
+}
+
+.ui-icon-myapp-edit {
+    background-image: url("app-icon-email.png") !important;/*I added the !important, I found that this rule was being overwritten*/
+}

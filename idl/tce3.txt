@@ -1,0 +1,65 @@
+
+module test3{
+
+
+sequence<int> IntList;
+sequence<byte> ByteStream_t;
+
+struct CategoryNew{
+    float wieght;
+    double numbers;
+};
+
+//sequence<Category> CategoryList_t;
+
+struct Animal{
+	int age;
+	byte num;
+	bool sex;
+	string name;
+	IntList ids;
+	//Category cat;
+	//CategoryList_t catlist;
+	ByteStream_t streams;
+};
+
+sequence<IntList> IntListList_t;
+
+dictionary<int,string> IdName;
+sequence<Animal> AnimalListT;
+sequence<ByteStream_t> ByteStreamList_t;
+
+struct HostAddress_t{
+	string host;
+	int     port;
+};
+
+struct AddressInfo_t{
+	string postcode;
+	string address;
+};
+
+struct Location_t{
+	AddressInfo_t address;
+	float   lon;
+	float   lat;
+};
+
+struct RecordPtr_t{
+	long pos;
+};
+
+dictionary<string,Location_t> LocationAndUserName_t;
+
+
+interface Person{
+	string getName();
+	HostAddress_t getHostAddress(int type,string kind);
+	IntListList_t getIntIdList(bool type);
+	AnimalListT getAnimalList(IntListList_t ids,string where);
+	ByteStream_t firstStream(RecordPtr_t ptr);
+	Location_t getLocation(int pos);
+	LocationAndUserName_t getLocationWithUser();
+};
+
+}

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>tce_flex</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>com.adobe.flexbuilder.project.flexbuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>com.adobe.flexbuilder.project.flexnature</nature>
+		<nature>com.adobe.flexbuilder.project.actionscriptnature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>[source path] actionscript</name>
+			<type>2</type>
+			<location>C:/projects/newgis.2013/swGis/src/tce/actionscript</location>
+		</link>
+		<link>
+			<name>[source path] flex</name>
+			<type>2</type>
+			<location>C:/projects/newgis.2013/swGis/src/newgis/lib/flex</location>
+		</link>
+	</linkedResources>
+</projectDescription>

@@ -1,0 +1,41 @@
+
+common_defs:
+  endpoints:
+    - name: mq_gateway
+      host: centos66
+      port: 5672
+      address: mq_gateway;{create:always,node:{type:queue,durable:true}}
+      type: qpid
+
+    - name: mq_server
+      host: centos66
+      port: 5672
+      address: mq_server;{create:always,node:{type:queue,durable:true}}
+      type: qpid
+
+    - name: mq_gateway_ws
+      host: centos66
+      port: 5672
+      address: mq_gateway_ws;{create:always,node:{type:queue,durable:true}}
+      type: qpid
+
+    - name: mq_user_event_listener
+      host: centos66
+      port: 5672
+      address: mq_user_event_listener;{create:always,node:{type:queue,durable:true}}
+      type: qpid
+
+
+server:
+  endpoints:
+    - name: mq_gateway
+      af_mode: AF_WRITE
+    - name: mq_server
+      af_mode: AF_READ
+    - name: mq_gateway_ws
+      af_mode: AF_WRITE
+
+    - name: mq_user_event_listener
+      af_mode: AF_READ
+
+

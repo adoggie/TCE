@@ -1,0 +1,3 @@
+sns.IBaseServer=100
+sns.ICtrlServer = 301
+sns.IGateway = 401

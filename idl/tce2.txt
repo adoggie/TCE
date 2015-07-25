@@ -1,0 +1,55 @@
+
+struct Animal{
+	int age;
+	byte num;
+	bool sex;
+	string name;
+};
+
+sequence<int> IntList;
+dictionary<int,string> IdName;
+sequence<Animal> AnimalListT;
+
+struct ClientInfo{
+	string id;
+	int     age;
+	int     sex;
+	string addr;
+	IntList ids;
+	IdName  idnames;
+
+	AnimalListT animals;
+};
+
+
+
+interface PostClient{
+	ClientInfo getInfo();
+    int test1(string name,IntList ids);
+    IdName test2(string name);
+};
+
+struct id_t{
+    string name;
+    int     id;
+};
+
+struct DevRouter{
+    int kind;
+    string vendor;
+};
+
+sequence<DevRouter> DevRouterList;
+
+
+interface NetMgrServer{
+    id_t getId();
+    int shutdown();
+    DevRouterList enumRouterList(string filter);
+    ClientInfo getInfo();
+    string put_ids(IntList ids);
+    void greeting(string gees);
+};
+
+
+

@@ -1,0 +1,80 @@
+//============================================================================
+// Name        : tce_client.cpp
+// Author      : sss
+// Version     :
+// Copyright   : Your copyright notice
+// Description : Hello World in C++, Ansi-style
+//============================================================================
+
+#include <iostream>
+
+#include "tce2.h"
+using namespace std;
+#include <boost/thread.hpp>
+
+void test_socket(){
+    tce2::PostClientPrxPtr prx;
+    tce::RpcConnectionPtr conn ;
+    tce::Properties_t props;
+    tce::RpcCommAdapterPtr adapter;
+
+    //conn = tce::RpcCommunicator::instance().createConnection(tce::RpcConnection::SOCKET,"172.26.181.83:5678");
+    //prx =tce2:: PostClientPrx::create(conn );
+    //conn->connect();
+
+    prx = tce2::PostClientPrx::create("172.26.181.83:5678");
+     		    tce2::ClientInfo ci;
+    int n=0;
+    while(1){
+    	try{
+    	std::cout << " invoke begin: "<<n++<<std::endl;
+    	ci = prx->getInfo();
+    	std::cout<< ci.id << std::endl;
+    	std::cout << " return end: "<<n++<<std::endl;
+
+    	}catch(tce::RpcException& e){
+    		std::cout<< "errcode:"<<e.what()<<std::endl;
+    	}
+    	tce::SLEEP_MSEC(2000);
+
+    }
+}
+
+#include <deque>
+void test_mem(){
+	while(1){
+		tce::ByteArray d;
+		 tce2::ClientInfo ci;
+		 ci.addr ="dfskafhjakshdfjkhasdfjlaskdjfadsfjdsajfsadf";
+		 ci.id = "scott.bin";
+		 ci.age = 101;
+		 ci.sex = 200;
+		 ci.ids.push_back(100);
+
+		 ci.marshall(d);
+		 tce2::ClientInfo c2;
+		 c2.unmarshall(d);
+
+		 tce::DataChunkPtr pdc;
+		 std::deque<char> dc;
+		 dc.assign( d.data(),d.data() +d.size());
+		 dc.clear();
+
+
+	//	 tce::SLEEP_MSEC(1);
+	}
+}
+
+int main() {
+	size_t size;
+	size = sizeof(long);
+
+    tce::RpcCommunicator::instance().init();
+  //
+    test_socket();
+
+    tce::RpcCommunicator::instance().exec();
+    test_mem();
+    return 0;
+}
+

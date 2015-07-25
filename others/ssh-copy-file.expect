@@ -1,0 +1,30 @@
+#!/usr/bin/expect
+
+set timeout 5
+set password  111111
+
+#puts $argc
+if {$argc > 0} {
+	set password [lindex $argv 0]
+	puts $password
+}
+
+
+#exit
+
+spawn ssh root@centos66
+expect {
+	"yes/no" { send "yes\r"; exp_continue}
+	"password" { send "$password\r"}
+}
+expect "root@" { send "ls -l / \r  touch /home/abc \r"}
+expect "root@" { send "exit \r"}
+
+
+spawn scp ssh-copy-file.expect root@centos66:/home
+expect {
+	"yes/no" { send "yes\r"; exp_continue}
+	"password" { send "$password\r"}
+}
+
+expect eof

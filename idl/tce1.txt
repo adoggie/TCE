@@ -1,0 +1,24 @@
+
+module test{
+
+
+struct Animal{
+	int age;
+};
+
+sequence<int> IntList;
+dictionary<int,string> IdName;
+dictionary<string,Animal> IntListAnimal;
+dictionary<int,string> IntListStringDict;
+dictionary<string,IdName> IntlistIdNameDict;
+
+sequence<Animal> AnimalList;
+sequence<IdName> NewSeq;
+
+
+interface PostClient{
+	string hello();
+};
+
+
+}

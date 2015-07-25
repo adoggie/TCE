@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="955" minHeight="600"
+			 creationComplete="init()"
+			   >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			
+			import newgis.*;
+			
+			import tcelib.RpcCommAdapter;
+			import tcelib.RpcConnection;
+			import tcelib.RpcConnectionEvent;
+			import tcelib.RpcMessage;
+			import tcelib.RpcProxyBase;
+			import tcelib.utils.HashMap;
+			
+//			var fn:Function;
+			private var prx:IAuthServicePrx = null;
+			private var prxgwa:IGatewayAdapterPrx = null;
+			private var adapter:RpcCommAdapter = null;
+			private function init():void{
+				prxgwa = IGatewayAdapterPrx.create("localhost",4002);
+				prx = IAuthServicePrx.create("localhost",4004);
+				adapter = new RpcCommAdapter();
+				var servant:TerminalImpl = new TerminalImpl();
+				adapter.addServant(servant);
+				prxgwa.conn.attachAdapter(adapter); //执行服务器到客户端的方向调用
+			}
+			
+			private function userauth_async(token:String,prx:RpcProxyBase):void{
+				Alert.show(token,"auth return");
+				prxgwa.login("sdkljfaksdjf",this.login_async);
+			}
+			
+			private function login_async(cr:CallReturn_t,prx:RpcProxyBase):void{
+				Alert.show(cr.value);
+			}
+			public function test():void{
+				
+			}
+			
+			protected function onTest(event:MouseEvent):void
+			{
+				prx.userAuth("scott","111111",1,this.userauth_async);
+//				prx.userLogin("scott","111111",1,this.userlogin_async);
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Button x="171" y="194" label="按钮" click="onTest(event)"/>
+	<s:CheckBox x="171" y="248" label="复选框"/>
+	<mx:ColorPicker x="296" y="228"/>
+	<s:ComboBox x="124" y="294"/>
+</s:Application>

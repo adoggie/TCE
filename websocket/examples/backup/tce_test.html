@@ -1,0 +1,234 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+	<meta charset="utf-8">
+    <title></title>
+	<!--<link rel="stylesheet" href="scripts/jquery.mobile-1.2.0.css" />-->
+	<script src="../scripts/jquery-1.8.3.js"></script>
+	<!--<script src="scripts/jquery.mobile-1.2.0.js"></script>-->
+	<!--<link href="styles/main.css" rel="stylesheet" />-->
+	<!--<script src="scripts/main.js"></script>-->
+	<script src="../scripts/jquery.utils.min.js"></script>
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" >
+
+</head>
+
+<script src="../tce.js"></script>
+<script src="sns_service.js" charset="utf-8" ></script>
+
+<script src="../scripts/main.js" charset="utf-8" ></script>
+
+<script src="http://webapi.amap.com/maps?v=1.1&key=bafec3ee56a06d43486e4c705b0c3bee">
+</script>
+
+
+<script>
+	function utf8to16(str) {
+		var out, i, len, c;
+		var char2, char3;
+
+		out = "";
+		len = str.length;
+		i = 0;
+		while(i < len) {
+			c = str.charCodeAt(i++);
+			switch(c >> 4)
+			{
+				case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
+				// 0xxxxxxx
+				out += str.charAt(i-1);
+				break;
+				case 12: case 13:
+				// 110x xxxx   10xx xxxx
+				char2 = str.charCodeAt(i++);
+				out += String.fromCharCode(((c & 0x1F) << 6) | (char2 & 0x3F));
+				break;
+				case 14:
+					// 1110 xxxx  10xx xxxx  10xx xxxx
+					char2 = str.charCodeAt(i++);
+					char3 = str.charCodeAt(i++);
+					out += String.fromCharCode(((c & 0x0F) << 12) |
+							((char2 & 0x3F) << 6) |
+							((char3 & 0x3F) << 0));
+					break;
+			}
+		}
+
+		return out;
+	}
+
+
+</script>
+
+<script>
+
+function MyTerminal(){
+	this.onGetMessage = function(src_id,team_id,msg,seq,ctx){
+//		console.log('abc');
+		var html = $('#msgrecv').html();
+		var text = Date().toString()+' <span style="color: #ff0000">'+ msg.text.text + '</span> <br>'
+		text+=html;
+//		console.log(text);
+		$('#msgrecv').html(text);
+		msgprx.sendMsgAck_oneway([seq]);
+	};
+	this.onGetLocation = function(src_id,loc,ctx){
+		//alert('get location..');
+		console.log($.format('lon:{lon:.4f},lat:{lat:.4f}',
+				{lon:loc.gps.loc.lon,lat:loc.gps.loc.lat}));
+
+	};
+
+};
+
+MyTerminal.prototype = new ITerminal();
+
+</script>
+<script>
+
+	var servant = new MyTerminal();
+
+	RpcCommunicator.instance().init();
+	authprx = IAuthServiceProxy.create('ws://localhost:4005');
+	gwaprx = IGatewayAdapterProxy.create('ws://localhost:4003');
+	userprx = IUserServiceProxy.createWithProxy(gwaprx);
+	msgprx = IMessagingServiceProxy.createWithProxy(gwaprx);
+	adapter = RpcCommunicator.instance().createAdapter("test");
+	adapter.addServant(servant);
+	msgprx.conn.attachAdapter(adapter);
+	//servant.delegate.inst.onGetMessage('1','2',null,'seq',null);
+
+	var cnt=1;
+
+function getFreinds(){
+	//调用IUserService接口
+	$('#result').html('do retrieving friends..');
+	userprx.getAllFriends_async(function(result){
+		$('#result').html('result count:'+result.length.toString());
+		var txt='';
+		for(var n=0;n<result.length;n++){
+			x = result[n];
+		 	txt +=String(cnt) + ">> id:" + x.id + ' user:'+ x.username + "." + x.name +"."+ x.email +'<br>';
+			console.log();
+
+		}
+		$('#result').html(txt);
+		cnt+=1;
+	});
+}
+
+function doLogin(){
+
+//	$('#start').html(Date().toString());
+
+	try{
+		$('#msgrecv').html('');
+		//请求认证
+		$('#result').html('do auth.userLogin()..');
+		authprx.userLogin_async($('#username').val(),$('#passwd').val(),1,function(token,prx){
+			$('#result').html(token);
+//			$('#end').html(Date().toString());
+
+			//登录到gwa建立起链路
+//			$('#result').html('do gwa.login()..');
+			gwaprx.login_async(token,function(result){
+				$('#result').html('gwa login result:'+ result.value);
+				//getFreinds();
+
+			});
+		},function(){
+				console.log('send failed!');
+		});
+	}catch(e){
+		console.log(e.toString());
+		$('#result').html(e.toString());
+	}
+
+	//$('#end').html(Date().toString());
+}
+
+
+	function initMap() {
+		var mapObj = new AMap.Map("map"); // 创建地图实例
+		var point = new AMap.LngLat(116.404, 39.915); // 创建点坐标
+		mapObj.setCenter(point); // 设置地图中心点坐标
+	}
+
+	$(document).ready(function(){
+		//alert(100);
+		initMap();
+		loc = new LocationProvider();
+		loc.open();
+		loc.onData = function(d){
+			//_self.ws.send({'type':'gps','lon':d.lon,'lat':d.lat,'time':d.time,'speed':d.speed,'direction':d.heading});
+			//float 5
+//			_self.ws.send({t:'g',o:d.lon,a:d.lat,s:d.speed,d:d.heading});
+			var loc = $.format('lon:{lon:.4f},lat:{lat:.4f}',{lon:d.lon,lat:d.lat});
+			$('#location').html(loc);
+		};
+
+		$('#btn_login').click(function(e){
+			doLogin();
+		});
+
+		$('#btn_getfriends').click(function(e){
+			getFreinds();
+		});
+
+		$('#btnsend').click(function(e){
+			text = $.trim( $('#txtmsg').val() );
+			if(text.length == 0){
+				alert('message is null!');
+				return;
+			}
+			target = $.trim($('#target_id').val());
+			if(target.length == 0){
+				alert('must set target id!');
+				return ;
+			}
+			m = new MimeMessage_t();
+			m.type = 1;
+			m.text.type = 1;
+			m.text.text = text;
+			msgprx.sendMessage_oneway([target],1,m);
+		});
+
+
+	});
+
+
+</script>
+<body >
+
+用户名<input id="username" value="test1"/><br/>
+口令<input id="passwd" value="123456"/><br>
+<button id="btn_login">系统登录</button>
+<br>
+<button id="btn_getfriends">获取所有好友列表</button>
+<button id="btn_getgroups">获取所有分组列表</button>
+<button id="btn_getteams">获取所有群列表</button>
+
+<br>
+<div id="content">
+
+
+</div>
+
+Rpc Test:<div id="result"></div><br>
+<!--start time:<div id="start"></div><br>-->
+<!--end time:<div id="end"></div>-->
+<br>
+target ID<input id="target_id" value=""/>
+<br>message<input id="txtmsg" value=""  style="width: 100%">
+	<button id="btnsend" >send message</button>
+<!--<br>message recved<input id="txtmsgrecv" style="width: 100%" value="">-->
+
+<br/>
+<div id="msgrecv">
+</div>
+
+<div id="location"></div>
+<div id="map" style="width: 400px;height: 400px"></div>
+
+</body>
+</html>

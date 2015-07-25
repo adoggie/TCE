@@ -1,0 +1,48 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+	<meta charset="gb2312">
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" >
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title></title>
+	<!--<link rel="stylesheet" href="scripts/jquery.mobile-1.2.0.css" />-->
+	<script src="../scripts/jquery-1.8.3.js"></script>
+	<script src="../scripts/jquery.mobile-1.2.0.js"></script>
+	<!--<link href="styles/main.css" rel="stylesheet" />-->
+	<!--<script src="scripts/main.js"></script>-->
+	<!--<script src="http://api.map.baidu.com/api?v=1.4" type="text/javascript"></script>-->
+</head>
+
+<style type="text/css">
+	html { height:100% }
+	body { height:100%; margin:0px; padding:0px }
+	#container { height:100% }
+</style>
+
+<script language="javascript" src="http://api.amap.com/webapi/init?v=1.1"></script>
+
+
+<script>
+
+	function initialize() {
+		var mapObj = new AMap.Map("container"); // 创建地图实例
+		var point = new AMap.LngLat(116.404, 39.915); // 创建点坐标
+		mapObj.setCenter(point); // 设置地图中心点坐标
+	}
+
+//	function initialize() {
+//		var mp = new BMap.Map('map');
+//		mp.centerAndZoom(new BMap.Point(121.491, 31.233), 11);
+//	}
+
+$(document).ready(function(){
+	initialize();
+});
+
+</script>
+<body >
+
+<div id="container" style="width:500px;height:400px"></div>
+<!--<input id="txtmsg" value=""> <button id="btnsend" >send</button>-->
+</body>
+</html>

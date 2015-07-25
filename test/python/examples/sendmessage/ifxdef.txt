@@ -1,0 +1,5 @@
+<if id="0" name="sns.BaseServer"/>
+<if id="1" name="sns.ITerminalGatewayServer"/>
+<if id="2" name="sns.Server"/>
+<if id="3" name="sns.ITerminal"/>
+<if id="4" name="sns.IMessageServer"/>

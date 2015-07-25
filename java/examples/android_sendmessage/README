@@ -1,0 +1,21 @@
+
+
+<android>
+程序演示 app程序连接到gateway服务器，发送消息到其他终端设备的实现过程 。
+
+相关的服务程序：
+  gateway.py ,server.py  （ 见$tce/test/python/cluster/)
+
+  gateway以 socket接入方式启动 ：
+    python gateway.py gwserver
+
+  为实现与其他接入终端互动，可以启动 $tce/websocket/examples/test_sns_sendmessage.html,
+  或 $tce/test/python/cluster/client.py
+
+
+终端编号:
+	client.py : A1001
+	test_sns_sendmessage.html : A1002
+	android : A1003
+
+	发送消息时需指定接收消息的终端编号

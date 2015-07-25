@@ -1,0 +1,24 @@
+
+
+module test{
+
+interface BaseServer{
+	string datetime();
+};
+
+interface Server extends BaseServer{
+	string echo(string text);
+	void  timeout(int secs);
+	void heartbeat(string hello);
+	void bidirection();
+};
+
+
+interface ITerminal{
+    void onMessage(string  message);
+};
+
+}
+
+//-- stranger -----------------------------
+

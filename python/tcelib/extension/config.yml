@@ -1,0 +1,29 @@
+
+brokers:
+  - name: broker1
+    front: tcp://*:5566
+    back: tcp://*:5567
+    type: push
+
+  - name: broker2
+    front: tcp://*:5576
+    back: tcp://*:5577
+    type: pub
+
+server1:
+  endpoints:
+    - name: mq_client
+      host: localhost
+      port: 12027
+      address: mq_client:queue
+      type: qpid
+      af_mode: AF_WRITE
+    - name: mq_server
+      host: localhost
+      port: 12027
+      address: mq_server:queue
+      type: qpid
+      af_mode: AF_READ
+  endpoint_pairs:
+    - call: mq_client
+      return: mq_server
