@@ -216,9 +216,8 @@ tce2py.py 自动生成了Server定义的Proxy对象(ServerPrx)和ServantBase对�
 
 ### 1. 关键字 
 
-
-NO|name | comment
----|--|-------
+id | name | comment
+---|------| -------
 1 | import | 导入其他idl模块
 2 | module | 表示一个模块定义，可理解为定义namespace
 3 | interface | 服务接口定义
@@ -227,6 +226,7 @@ NO|name | comment
 6 | sequence | 数组类型
 7 | dictionary | 字典类型
 8 | byte,short,int,long,float,double,string,bool | 基础数据类型
+
 
 ### 2. 编写 idl
 
