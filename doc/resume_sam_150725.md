@@ -11,7 +11,7 @@
 	邮件: socketref@hotmail.com / 24509826@qq.com
 	电话: 13916624477
 	主页: 
-	  - http://github.com/adoggies
+	  - http://github.com/adoggie
 
 ####简介
 	- 十五年软件开发、实施、项目管理经验，三年创业经历，曾参与研发大型产品的成功经历(移动APP、SNS、流媒体、网游、交易、车载导航监控等);
