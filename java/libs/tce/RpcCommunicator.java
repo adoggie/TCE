@@ -156,12 +156,13 @@ public class RpcCommunicator implements Runnable{
 				String value = properties.get("thread_num");
 				_processThreadNum = Integer.valueOf(value);
 			}
-			//分配线程
-			for(int n=0;n<_processThreadNum;n++){
-				Thread thread = new Thread(this);
-				_processThreads.add(thread);
-				thread.start();
-			}
+
+		}
+		//分配线程
+		for(int n=0;n<_processThreadNum;n++){
+			Thread thread = new Thread(this);
+			_processThreads.add(thread);
+			thread.start();
 		}
 		return this;
 	}
