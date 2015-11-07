@@ -59,6 +59,7 @@ class StreamWriter:
 		self.defaultinclude = 'deault'
 		self.varidx = 0
 		self.lastvar =''
+		self.pkg_prefix = ''
 
 	def newVariant(self,name):
 		self.varidx +=1
@@ -134,20 +135,28 @@ class StreamWriter:
 		self.writeln(txt)
 
 	def createPackage(self,name):
+		# if self.pkg_prefix:
+		# 	name = os.path.join(self.pkg_prefix,name)
 
 		if not  os.path.exists(name):
 			print 'mkdir:',name
-			os.mkdir(name)
+			# os.mkdir(name)
+			os.makedirs(name)
 
 	#进入包空间
 	def pkg_enter(self,name):
 		self.packages.append(name)
+		# if self.pkg_prefix:
+		# 	name = os.path.join(self.pkg_prefix,name)
 		os.chdir(name)
 
 
 	def pkg_current(self):
 		import string
-		return string.join(self.packages,'.')
+		if self.pkg_prefix:
+			return self.pkg_prefix + '.' + string.join(self.packages,'.')
+		else:
+			return string.join(self.packages,'.')
 
 	def pkg_leave(self):
 		pkg = self.packages[-1]
@@ -159,7 +168,11 @@ class StreamWriter:
 #		self.write("package %s"%pkg).brace1().wln().idt_dec()
 #		print pkg
 		self.idt.reset()
-		self.write("package %s;"%pkg)
+
+		if self.pkg_prefix:
+			self.writeln("package %s;"%(self.pkg_prefix+'.'+pkg) )
+		else:
+			self.writeln("package %s;"%pkg)
 
 	def pkg_end(self):
 		pass
@@ -1460,9 +1473,9 @@ def createCodes():
 			if argv:
 				ifcnt = int(argv.pop(0))
 
-		# if p == '-p':
-		# 	if argv:
-		# 		pkgname = argv.pop(0)
+		if p == '-p':
+			if argv:
+				pkgname = argv.pop(0)
 
 		if p =='-filter':
 			if argv:
@@ -1524,6 +1537,7 @@ def createCodes():
 		# print module.children
 
 		sw = StreamWriter(ostream,Indent())
+		sw.pkg_prefix = pkgname.strip()
 		sw.createPackage(name)
 		sw.pkg_enter(name)
 
