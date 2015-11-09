@@ -218,7 +218,7 @@ class Builtin_Python:
 			sw.writeln('size+= 8;')
 		if typ.type =='string':
 			v = sw.newVariant('_sb')
-			sw.writeln('var %s = utf16to8(%s);'%(v,val))
+			sw.writeln('var %s = tce.utf16to8(%s);'%(v,val))
 			sw.writeln('size+= 4 + %s.getBytes().length;'%v)
 		if typ.type == 'bool':
 			sw.writeln('size+= 1;')
@@ -248,7 +248,7 @@ class Builtin_Python:
 			sw.writeln('%s+=8;'%offset)
 		if typ.type =='string':
 			v = sw.newVariant('_sb')
-			sw.writeln('var %s = utf16to8(%s).getBytes();'%(v,val))
+			sw.writeln('var %s = tce.utf16to8(%s).getBytes();'%(v,val))
 			#sw.writeln('var %s = %s.getBytes();'%(v,v))
 			sw.writeln('%s.setInt32(%s,%s.length);'%(stream,offset,v))
 			sw.writeln('%s+=4;'%offset)
@@ -295,7 +295,7 @@ class Builtin_Python:
 			sw.writeln('%s+= %s;'%(offset,v))
 #			sw.writeln('%s = new String(%s);'%(val,v2))
 			sw.writeln('%s = String.fromCharCode.apply(null, %s.getBytes());'%(val,val))
-			sw.writeln('%s = utf8to16(%s);'%(val,val))
+			sw.writeln('%s = tce.utf8to16(%s);'%(val,val))
 
 		if typ.type == 'bool':
 			v = sw.newVariant('_b')

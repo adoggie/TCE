@@ -1,3 +1,7 @@
+define('tce',function(){
+
+
+
 String.prototype.getBytes = function () {
 	var bytes = [];
 	for (var i = 0; i < this.length; ++i) {
@@ -608,3 +612,18 @@ function utf8to16(str) {
 
 	return out;
 }
+
+
+// end of define()
+	return {
+		RpcAdapter: RpcAdapter,
+		RpcCommunicator: RpcCommunicator,
+		RpcMessage: RpcMessage,
+		RpcConnection: RpcConnection,
+		RpcContext: RpcContext,
+		RpcConsts: RpcConsts,
+		utf8to16: utf8to16,
+		utf16to8: utf16to8
+	};
+
+});
