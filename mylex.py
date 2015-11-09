@@ -670,8 +670,11 @@ def module_type_parse(typename,n,m):
 	return t
 
 def parse_idlfile(idlfile):
+	import os.path
 	#防止重复解析
-	filename = idlfile.split('.')[0]
+	# filename = idlfile.split('.')[0]
+	filename = os.path.splitext(idlfile)[0] # 2015.11.9 scott
+	filename = os.path.basename(filename)  # 2015.11.9 scott
 	if imported_files.count(filename):
 		return
 	imported_files.append(filename)
@@ -695,6 +698,7 @@ def parse_idlfile(idlfile):
 
 	except:
 		print 'IDL file access: <%s> denied!'%idl
+		traceback.print_exc()
 		sys.exit()
 
 
