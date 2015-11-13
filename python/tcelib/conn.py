@@ -1,5 +1,6 @@
-__author__ = 'scott'
 #--coding:utf-8 --
+__author__ = 'scott'
+
 
 import time,threading
 import message
