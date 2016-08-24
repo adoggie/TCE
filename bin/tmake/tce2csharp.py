@@ -41,8 +41,8 @@ headtitles='''
 '''+NEWLINE
 
 
-class LanguageJava(object):
-	language = 'java'
+class LanguageCSharp(object):
+	language = 'csharp'
 	class Builtin:
 		@classmethod
 		def defaultValue(cls,this):
@@ -58,22 +58,22 @@ class LanguageJava(object):
 			r = ''
 			type = this.type
 			if type in ('byte',) : #'bool'):
-				r ='Byte'
+				r ='byte'
 			if type in ('bool',):
-				r = 'Boolean'
+				r = 'bool'
 			if type in ('short',):
-				r ='Short'
+				r ='short'
 			if type in ('int',):
-				r = 'Integer'
+				r = 'int'
 			elif type in ('float',):
-				r = 'Float'
+				r = 'float'
 			elif type in ('long',):
-				r = 'Long'
+				r = 'long'
 			elif type in ('double',):
-				r = 'Double'
-			elif type in ('string'):
-				r = "String"
-			elif type in ('void'):
+				r = 'double'
+			elif type in ('string',):
+				r = "string"
+			elif type in ('void',):
 				r ='void'
 			return r
 
@@ -82,26 +82,26 @@ class LanguageJava(object):
 		def defaultValue(cls,this,call_module):
 			if this.type.name == 'byte':
 				return 'new byte[0]'  # equals to java 
-			return 'new Vector<%s>()'%this.type.getMappingTypeName(call_module)
+			return 'new List<%s>()'%this.type.getMappingTypeName(call_module)
 
 		@classmethod
 		def typeName(cls,this,call_module):
 			if this.type.name == 'byte':
 				return 'byte[]'
-			return 'Vector<%s>'%this.type.getMappingTypeName(call_module)
+			return 'List<%s>'%this.type.getMappingTypeName(call_module)
 
 
 	class Dictionary:
 		@classmethod
 		def defaultValue(cls,this,call_module):
-			return 'new HashMap<%s,%s>()'%(this.first.getMappingTypeName(call_module),
+			return 'new Dictionary<%s,%s>()'%(this.first.getMappingTypeName(call_module),
 											 this.second.getMappingTypeName(call_module)
 											)
 
 		@classmethod
 		def typeName(cls,this,call_module):
-			return 'HashMap< %s,%s >'%(this.first.getMappingTypeName(call_module),
-			                        this.second.getMappingTypeName(call_module) )
+			return 'Dictionary< %s,%s >'%(this.first.getMappingTypeName(call_module),
+									this.second.getMappingTypeName(call_module) )
 
 
 	class Struct:
@@ -226,6 +226,7 @@ class StreamWriter:
 		self.writeln(txt)
 
 	def createPackage(self,name):
+
 		# if self.pkg_prefix:
 		# 	name = os.path.join(self.pkg_prefix,name)
 
@@ -740,20 +741,28 @@ def createCodeDictionary(e,sw,idt):
 
 
 def createProxy(e,sw,ifidx):
+	"""
+	创建代理对象
+	:param e:   interface
+	:param sw: streamwriter
+	:param ifidx: interface-index
+	:return:
+	"""
 	# 创建代理
 	module = e.container
-	sw.classfile_enter('%sProxy'%e.getName())
-	sw.wln()
 
-	sw.writeln('import tce.*;')
-	sw.writeln('import java.io.*;')
-	sw.writeln('import java.nio.*;')
-	sw.writeln('import java.util.*;')
-	sw.wln()
+	# sw.classfile_enter('%sProxy'%e.getName())
+	# sw.wln()
+	#
+	# sw.writeln('import tce.*;')
+	# sw.writeln('import java.io.*;')
+	# sw.writeln('import java.nio.*;')
+	# sw.writeln('import java.util.*;')
+	# sw.wln()
 
 	#	sw.writeln("import %s.%s;"%(sw.pkg_current(), e.getName() ) )
 	sw.wln()
-	sw.writeln('public class %sProxy extends RpcProxyBase{'%e.getName() ).idt_inc()
+	sw.writeln('public class %sProxy:RpcProxyBase{'%e.getName() ).idt_inc()
 	sw.writeln("//# -- INTERFACE PROXY -- ")
 	#
 	sw.wln()
@@ -762,9 +771,9 @@ def createProxy(e,sw,ifidx):
 	sw.scope_end().wln()
 
 	#--create()
-	sw.writeln('public static %sProxy create(String host,int port,Boolean ssl_enable){'%e.getName()).idt_inc()
-	sw.writeln('int type = RpcConsts.CONNECTION_SOCK;')
-	sw.writeln('if (ssl_enable) type |= RpcConsts.CONNECTION_SSL;')
+	sw.writeln('public static %sProxy create(string host,int port,bool ssl_enable){'%e.getName()).idt_inc()
+	sw.writeln('int type = RpcConstValue.CONNECTION_SOCK;')
+	sw.writeln('if (ssl_enable) type |= RpcConstValue.CONNECTION_SSL;')
 	sw.writeln('RpcConnection conn = RpcCommunicator.instance().'
 			   'createConnection(type,'
 			   'host,port);')
@@ -788,12 +797,12 @@ def createProxy(e,sw,ifidx):
 	sw.writeln('try{').idt_inc()
 	sw.writeln('conn.close();')
 	sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
-	sw.writeln('RpcCommunicator.instance().getLogger().error(e.getMessage());')
+	sw.writeln('RpcCommunicator.instance().getLogger().error(e.ToString());')
 	sw.scope_end()
 	sw.scope_end()
 
 	#-- end destroy()
-
+	# throws not existed in c# !!!!
 	for opidx,m in enumerate(e.list): # function list
 		sw.wln()
 		#------------BEGIN TOWAY CALL with timeout ----------------------------------------
@@ -807,7 +816,8 @@ def createProxy(e,sw,ifidx):
 		# 函数定义开始
 
 
-		sw.writeln('public %s %s(%s) throws RpcException{'%(m.type.getMappingTypeName(module),m.name,s) ).idt_inc()
+		# sw.writeln('public %s %s(%s) throws RpcException{'%(m.type.getMappingTypeName(module),m.name,s) ).idt_inc()
+		sw.writeln('public %s %s(%s){'%(m.type.getMappingTypeName(module),m.name,s) ).idt_inc()
 		if m.type.name!='void':
 			sw.write('return ')
 		_params =[]
@@ -816,19 +826,20 @@ def createProxy(e,sw,ifidx):
 
 		_params = string.join(_params,',')
 		if _params: _params +=','
-		sw.ostream.write('%s(%stce.RpcCommunicator.instance().getProperty_DefaultCallWaitTime(),null);'%(m.name,_params) )
+		sw.ostream.write('%s(%RpcCommunicator.instance().getProperty_DefaultCallWaitTime(),null);'%(m.name,_params) )
 		sw.wln() #.idt_inc().wln()
 		sw.scope_end()
 
 		if s: s = s + ','
 		#-- 生成同步函数
 		sw.writeln('// timeout - msec ,  0 means waiting infinitely')
-		sw.writeln('public %s %s(%sint timeout,HashMap<String,String> props) throws RpcException{'%(m.type
-		                                                                                            .getMappingTypeName(module),
-		                                                                                            m.name,s) ).idt_inc()
+		# sw.writeln('public %s %s(%sint timeout,HashMap<String,String> props) throws RpcException{'%(m.type
+		sw.writeln('public %s %s(%sint timeout,Dictionary<string,string> props) {'%(m.type
+																									.getMappingTypeName(module),
+																									m.name,s) ).idt_inc()
 		sw.resetVariant()
 		r = sw.newVariant('r')
-		sw.define_var(r,'boolean','false')
+		sw.define_var(r,'bool','false')
 		m1 = sw.newVariant('m')
 		sw.define_var(m1,'RpcMessage','new RpcMessage(RpcMessage.CALL)')
 
@@ -865,13 +876,13 @@ def createProxy(e,sw,ifidx):
 			sw.writeln('%s.paramstream = %s.toByteArray();'%(m1,bos))
 		sw.writeln("%s.prx = this;"%m1)
 		sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
-		sw.writeln('throw new RpcException(RpcConsts.RPCERROR_DATADIRTY,e.toString());')
+		sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_DATADIRTY,e.toString());')
 		sw.scope_end() # end try()
 		# 完成参数打包
 		sw.writeln('synchronized(%s){'%m1).idt_inc()
 		sw.writeln("%s = this.conn.sendMessage(%s);"%(r,m1))
 		sw.writeln("if(!%s){"%r).idt_inc()
-		sw.writeln('throw new RpcException(RpcConsts.RPCERROR_SENDFAILED);')
+		sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_SENDFAILED);')
 		sw.scope_end() # end if()
 
 		#BEGIN WAITING
@@ -881,17 +892,17 @@ def createProxy(e,sw,ifidx):
 		sw.writeln('else %s.wait();'%m1)
 		# sw.scope_end() # end synchronized()
 		sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
-		sw.writeln('throw new RpcException(RpcConsts.RPCERROR_INTERNAL_EXCEPTION,e.getMessage());')
+		sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_INTERNAL_EXCEPTION,e.getMessage());')
 		sw.scope_end()
 		sw.scope_end() # end synchronized()
 
 		#检测错误码
-		sw.writeln('if (%s.errcode != RpcConsts.RPCERROR_SUCC){'%m1).idt_inc()
+		sw.writeln('if (%s.errcode != RpcConstValue.RPCERROR_SUCC){'%m1).idt_inc()
 		sw.writeln('throw new RpcException(%s.errcode);'%m1)
 		sw.scope_end()
 
 		sw.writeln('if( %s.result == null){'%m1).idt_inc() #网络断开
-		sw.writeln('throw new RpcException(RpcConsts.RPCERROR_TIMEOUT);') #超时
+		sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_TIMEOUT);') #超时
 		sw.scope_end()
 
 		if m.type.name !='void':
@@ -925,7 +936,7 @@ def createProxy(e,sw,ifidx):
 			else:
 				Builtin_Python.unserial(m.type,v,sw,d)
 			sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
-			sw.writeln('throw new RpcException(RpcConsts.RPCERROR_DATADIRTY);')
+			sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_DATADIRTY);')
 			sw.scope_end()
 
 			sw.writeln('return %s; //regardless if  unmarshalling is okay '%v)
@@ -984,12 +995,12 @@ def createProxy(e,sw,ifidx):
 				sw.writeln('%s.paramstream = %s.toByteArray();'%(m1,bos))
 			sw.writeln("%s.prx = this;"%m1)
 			sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
-			sw.writeln('throw new RpcException(RpcConsts.RPCERROR_DATADIRTY,e.toString());')
+			sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_DATADIRTY,e.toString());')
 			sw.scope_end() # end try()
 
 			sw.writeln("%s = this.conn.sendMessage(%s);"%(r,m1))
 			sw.writeln("if(!%s){"%r).idt_inc()
-			sw.writeln('throw new RpcException(RpcConsts.RPCERROR_SENDFAILED);')
+			sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_SENDFAILED);')
 			sw.scope_end() # end if()
 			sw.scope_end() # end function()
 			#end rpc proxy::call()  --
@@ -1064,12 +1075,12 @@ def createProxy(e,sw,ifidx):
 			sw.writeln("%s.prx = this;"%m1)
 			sw.writeln('%s.async = async;'%m1)
 			sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
-			sw.writeln('throw new RpcException(RpcConsts.RPCERROR_DATADIRTY,e.toString());')
+			sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_DATADIRTY,e.toString());')
 			sw.scope_end() # end try()
 
 			sw.writeln("%s = this.conn.sendMessage(%s);"%(r,m1))
 			sw.writeln("if(!%s){"%r).idt_inc()
-			sw.writeln('throw new RpcException(RpcConsts.RPCERROR_SENDFAILED);')
+			sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_SENDFAILED);')
 			sw.scope_end() # end if()
 			sw.scope_end() # end function()
 			#end rpc proxy::call()  --
@@ -1183,7 +1194,7 @@ def createCodeInterface(e,sw,idt,idx):
 
 	# ifidx = e.ifidx #过滤之后的接口索引( 暂停 )
 
-	module = e.container
+	module = e.container    # module is interface's container
 
 		#-------- index of if-cls from extern setting in file
 	import tce_util
@@ -1432,19 +1443,21 @@ def createCodeInterfaceMapping():
 
 
 
-def createCodeFrame(e,idx,sw ):
+def createCodeFrame(module,e,idx,sw ):
 	idt = Indent()
 
 	txt='''
-//import tce.*;
-//import javax.xml.parsers.*;
-//import org.w3c.dom.*;
-//import java.io.*;
-//import java.nio.*;
-//import java.util.*;
-	'''
-	sw.setIncludes('default',(txt,))
+		using System;
+		using Tce;
+		using System.Collections.Generic;
+		using System.IO;
+		using System.Net;
 
+		namespace %s{;
+	'''%module.name
+
+	sw.setIncludes('default',(txt,))
+	sw.writeIncludes()
 	if isinstance(e,Interface):
 		#sw.classfile_enter(e.getName())
 		createCodeInterface(e,sw,idt,idx)
@@ -1473,6 +1486,8 @@ def createCodeFrame(e,idx,sw ):
 		createCodeStruct(e,sw,idt)
 		sw.classfile_leave()
 		return
+
+	sw.scope_end()
 #
 #	createCodeInterfaceMapping() #创建 链接上接收的Rpc消息 根据其ifx编号分派到对应的接口和函数上去
 
@@ -1483,6 +1498,9 @@ class Outputer:
 	def addHandler(self,h):
 		self.files.append(h)
 		return self
+
+	def clearHandler(self):
+		self.files = []
 
 	def write(self,s):
 		s = s.encode('utf8')
@@ -1532,7 +1550,6 @@ def createCodes():
 
 	import tce_util
 	tce_util.getInterfaceIndexWithName('')
-#	print outdir
 
 	idlfiles = file.strip().split(',')
 	for file in idlfiles:
@@ -1545,27 +1562,41 @@ def createCodes():
 	os.chdir( outdir )
 	for module in global_modules:
 		name = module.name
-		print 'module:',name,module.ref_modules.keys()
+		print 'module and refs:',name,module.ref_modules.keys()
+
+
+		f = open(os.path.join(outdir,name+'.cs'),'w')
+		ostream.clearHandler()
+		ostream.addHandler(f)
+		ostream.write(headtitles)
 
 		sw = StreamWriter(ostream,Indent())
-		sw.pkg_prefix = pkgname.strip()
-		sw.createPackage(name)
-		sw.pkg_enter(name)
+
+		# sw.pkg_prefix = pkgname.strip()
+		# sw.createPackage(name)  # package is namespace
+		# sw.pkg_enter(name)
 
 		for idx,e in enumerate(module.list):
-			createCodeFrame(e,idx,sw)   #开始处理module代码实现
+			createCodeFrame(module,e,idx,sw)   #开始处理module代码实现
+			ostream.write(NEWLINE)
 
 		sw.pkg_leave()
 
 lexparser.language = 'csharp'
-lexparser.lang_kws = ['for', 'using', 'namespace','float',
-                      'new', 'class', 'interface', 'public','protected','private','struct','yield',
-                      'while', 'do', 'package', 'sealed','abstract','virtual','override','as','object','using','namesapce']
-lexparser.codecls = LanguageJava
+lexparser.lang_kws = ['for','foreach' 'using', 'namespace','float',
+					  'new', 'class', 'interface', 'public','protected','private','struct','yield',
+					  'while', 'do', 'package', 'sealed','abstract','virtual','override',
+					  'as','object','using','namesapce',]
+lexparser.codecls = LanguageCSharp
 
+
+'''
+tce2csharp.py 生成代码的namespace的处理方式如同cpp处理方式。
+每个module范围内的对象结构统一输出到一个cs文件,这不同java的实现方式（必须每个class独立分布，namespace以package来组织)
+'''
 def usage():
 	howto='''
-	python tce2csharp.py -unity -i a.idl,b.idl,.. -p package_name -o ./
+	python tce2csharp.py -unity -i a.idl,b.idl,..  -o ./
 		'''
 	print howto
 

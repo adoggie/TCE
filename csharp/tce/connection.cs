@@ -38,15 +38,15 @@ namespace Tce {
      * 处于服务器侧的adapter一般会打开本地连接(accept)来处理到达客户的连接请求。 
      * 
      */
-    class RpcConnection {
-        RpcAdapter _adapter;
+    public class RpcConnection {
+        RpcAdapter  _adapter;
         Dictionary<int, RpcMessage> _messages = new Dictionary<int, RpcMessage>();
-        string _host;
-        int _port;
-        int _type;
+        string      _host;
+        int         _port;
+        int         _type;
         private RpcEndpoint _ep;
-        bool _connected = false;
-        string _token;
+        bool        _connected = false;
+        string      _token;
         RpcConnectionAcceptor _acceptor;
 
 
@@ -152,7 +152,7 @@ namespace Tce {
        
        // static int count = 0;
 
-        internal void dispatchMsg(RpcMessage m){
+        public void dispatchMsg(RpcMessage m){
             if ((m.calltype & RpcMessage.CALL) != 0){
                 if (_adapter != null){
                     _adapter.dispatchMsg(m);
@@ -161,6 +161,10 @@ namespace Tce {
             if ((m.calltype & RpcMessage.RETURN) != 0){
                 this.doReturnMsg(m);
             }
+        }
+
+        public void setToken(String token){
+            _token = token;
         }
 
     }

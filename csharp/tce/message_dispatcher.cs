@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace Tce {
 
-    class RpcMessageDispatcher
+    public class RpcMessageDispatcher
     {
         public abstract class Client
         {

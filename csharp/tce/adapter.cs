@@ -15,7 +15,7 @@ namespace Tce
      * 
      * adapter 默认不启用处理线程，仅占用communicator的处理线程
      */
-    class RpcAdapter:RpcMessageDispatcher.Client{
+    public class RpcAdapter:RpcMessageDispatcher.Client{
 
         //adapter的参数配置 
         public class Settings {

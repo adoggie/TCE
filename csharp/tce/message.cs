@@ -5,8 +5,8 @@ using System.Threading;
 
 namespace Tce {
 
-    class RpcMessage {
-
+    public class RpcMessage {
+        public const int UNDEFINED = 0x00;
         public const int CALL = 0x01;
         public const int RETURN = 0x02;
         public const int TWOWAY = 0x10;
@@ -23,8 +23,8 @@ namespace Tce {
         public int ifidx = 0;
         public int opidx = 0;
         public int errcode = RpcError.RPCERROR_SUCC;
-        public int call_id = 0;
-        public int paramsize = 0;
+        public int call_id = 0;             
+        public int paramsize = 0;           //参数个数
         public byte[] paramstream = null;
         public RpcExtraData extra = new RpcExtraData();
         public RpcProxyBase prx = null;
@@ -40,7 +40,11 @@ namespace Tce {
         public RpcMessage result;
         internal AutoResetEvent ev = new AutoResetEvent(false);
 
+        public RpcMessage(int calltype = UNDEFINED) {
+            this.calltype = calltype;
+        }
 
+        //从二进制流中反序列化出对象RpcMessage
         public static RpcMessage unmarshall(Stream stream){
             RpcMessage m = new RpcMessage();            
             BinaryReader reader = new BinaryReader(stream);
@@ -54,8 +58,16 @@ namespace Tce {
     }
 
 
+    public class RpcMessageCall:RpcMessage{
 
-    class RpcAsyncCallBackBase{
+        public RpcMessageCall(): base(RpcMessage.CALL){
+		
+	    }
+	
+    }
+
+
+    public class RpcAsyncCallBackBase{
         public object delta = null;
         private string _token = null;
         private bool _execInMainThread = false;
@@ -67,10 +79,6 @@ namespace Tce {
         public void onError(int errorcode){
 
         }
-
-
-       
-
     }
 
 

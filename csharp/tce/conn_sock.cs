@@ -27,6 +27,21 @@ namespace Tce {
             _ep = ep;
         }
 
+        /*
+            c++ : constructor invoke other constructor 
+            class Test{    
+               Test() {
+                   new (this) Test(1); 
+               }
+               Test(int){}
+            }
+         */
+
+        public RpcConnectionSocket(string host, int port, bool ssl)
+            : this(new RpcEndpointSocket(host, port, ssl)){
+         
+        }
+
         public override void open() {
             
         }

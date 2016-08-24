@@ -16,7 +16,7 @@ namespace Tce {
         public const int MSGTYPE_NORPC = 2;
 
         public const int CONNECTION_UNKNOWN = 0;
-        public const int CONNNECTION_SOCK = 1;
+        public const int CONNECTION_SOCK = 1;
         public const int CONNECTION_HTTP = 2;
         public const int CONNECTION_SSL = 0x10;
 

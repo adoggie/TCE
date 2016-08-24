@@ -5,7 +5,7 @@ using System.Dynamic;
 namespace Tce
 {
 
-    class RpcServant {
+    public class RpcServant {
         private RpcServantDelegate _delegate;
 
         string _name;

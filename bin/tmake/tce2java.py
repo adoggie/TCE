@@ -71,9 +71,9 @@ class LanguageJava(object):
 				r = 'Long'
 			elif type in ('double',):
 				r = 'Double'
-			elif type in ('string'):
+			elif type in ('string',):
 				r = "String"
-			elif type in ('void'):
+			elif type in ('void',):
 				r ='void'
 			return r
 

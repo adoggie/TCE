@@ -14,6 +14,7 @@ namespace Tce {
         public class Settings {
             public string name;     // server name 
             public int threadNum = 1; // 默认启动 1 条处理线程
+            public int callwait = 1000*30;
         }
 
         private int _sequence = 0;
@@ -23,6 +24,7 @@ namespace Tce {
 
         private RpcMessageDispatcher _dispatcher;
         private Dictionary<int, RpcMessage> _cachedMsgList;
+        private Settings _settings;
 
         RpcCommunicator() : base("communicator") {
             
@@ -40,6 +42,7 @@ namespace Tce {
         }
 
         public bool initialize(Settings settings) {
+            _settings = settings;
             _dispatcher =new RpcMessageDispatcher(this,settings.threadNum);
 
             return true;
@@ -93,7 +96,53 @@ namespace Tce {
             }
         }
 
+        public void shudown() {
+            
+        }
 
+        public RpcAdapter createAdapterWithProxy(String id, RpcProxyBase proxy){
+            RpcAdapter adapter = null;
+            adapter = new RpcAdapter(id);
+            proxy.conn.adapter = adapter;
+            //		adapter.addConnection(proxy.conn);
+            addAdatper(adapter);
+            return adapter;
+        }
+
+        public void addAdatper(RpcAdapter adapter){
+            if (_adapters.ContainsKey(adapter.id)){
+                return;
+            }
+            _adapters.Add(adapter.id, adapter);
+        }
+
+        public RpcAdapter createAdapter(string id){
+            RpcAdapter adapter = new RpcAdapter(id);
+            addAdatper(adapter);
+            return adapter;
+        }
+
+        public RpcConnection createConnection(int type, string host, int port){
+            if ((type & RpcConstValue.CONNECTION_SOCK) != 0)
+            {
+                if ((type & RpcConstValue.CONNECTION_SSL) != 0)
+                {
+                    return new RpcConnectionSocket(host, port, true);
+                }
+                return new RpcConnectionSocket(host, port, false);
+            }
+            return null;
+        }
+
+        public RpcLogger getLogger() {
+            return this.logger;
+        }
+
+
+        public int getProperty_DefaultCallWaitTime(){
+            return  _settings.callwait;
+        }
+	
     }
 
 
