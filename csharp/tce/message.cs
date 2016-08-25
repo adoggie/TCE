@@ -18,16 +18,16 @@ namespace Tce {
         public const int RPC_PACKET_HDR_SIZE = 17;
 
         public int type = RpcConstValue.MSGTYPE_RPC;
-        public int sequence = 0;
-        public int calltype = 0;
-        public int ifidx = 0;
-        public int opidx = 0;
+        public int sequence = 0;            //自增序号
+        public int calltype = 0;            //rpc调用方式
+        public int ifidx = 0;               //调用接口编号
+        public int opidx = 0;               //接口内函数编号
         public int errcode = RpcError.RPCERROR_SUCC;
-        public int call_id = 0;             
+        public int call_id = 0;             //调用者类型
         public int paramsize = 0;           //参数个数
         public byte[] paramstream = null;
         public RpcExtraData extra = new RpcExtraData();
-        public RpcProxyBase prx = null;
+        public RpcProxyBase prx = null;     
         public long timeout;
         public long issuetime;
         public RpcAsyncCallBackBase async = null;
@@ -48,12 +48,45 @@ namespace Tce {
         public static RpcMessage unmarshall(Stream stream){
             RpcMessage m = new RpcMessage();            
             BinaryReader reader = new BinaryReader(stream);
+            try {
+                m.type = RpcBinarySerializer.readByte(reader);
+                m.sequence = RpcBinarySerializer.readInt(reader);
+                m.calltype = RpcBinarySerializer.readByte(reader);
+                m.ifidx = RpcBinarySerializer.readShort(reader);
+                m.opidx = RpcBinarySerializer.readShort(reader);
+                m.errcode = RpcBinarySerializer.readInt(reader);
+                m.paramsize = RpcBinarySerializer.readByte(reader);
+                if (m.extra.unmarshall(stream) == false) {
+                    return null;
+                }
+                m.paramstream = reader.ReadBytes( (int)(stream.Length - stream.Position) );
+            }
+            catch (Exception e) {
+                RpcCommunicator.instance().logger.error(e.ToString());
+                m = null;
+            }
             return m;
         }
 
+        //刚才出去吃麦，看到一只dog在贴单子，一过去，车开走了，那个沮丧的样子哦，还一直呆在那里与正拍摄的我进行对视
+        // 车子，单子，票子奋斗的dog
         public Stream marshall() {
             // to be continue.. 
-            return null;
+            MemoryStream stream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(stream);
+            RpcBinarySerializer.writeByte((byte)RpcConstValue.MSGTYPE_RPC,writer);
+            RpcBinarySerializer.writeInt( this.sequence,writer);
+            RpcBinarySerializer.writeByte((byte)this.calltype,writer);
+            RpcBinarySerializer.writeShort((short)this.ifidx,writer);
+            RpcBinarySerializer.writeShort((short)this.opidx,writer);
+            RpcBinarySerializer.writeInt(this.errcode,writer);
+            RpcBinarySerializer.writeByte((byte)this.paramsize,writer);
+            RpcBinarySerializer.writeShort((short)this.call_id,writer);
+            this.extra.marshall(stream);
+            if (this.paramstream != null) {
+                writer.Write(this.paramstream);
+            }
+            return stream;
         }
     }
 
@@ -64,6 +97,14 @@ namespace Tce {
 		
 	    }
 	
+    }
+
+
+    public class RpcMessageReturn : RpcMessage{
+        public RpcMessageReturn()
+            : base(RpcMessage.RETURN){
+
+        }
     }
 
 

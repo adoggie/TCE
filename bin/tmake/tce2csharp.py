@@ -297,25 +297,32 @@ class Builtin_Python:
 		# typ - builtin object ; val - variant name; var = d
 		s=''
 		if typ.type =='byte':
-			sw.writeln('%s.writeByte(%s);'%(stream,val))
+			# sw.writeln('%s.writeByte(%s);'%(stream,val))
+			sw.writeln('RpcBinarySerializer.writeByte(%s,%s);'%(val,stream))
 		if typ.type =='short':
-			sw.writeln('%s.writeShort(%s);'%(stream,val))
+			# sw.writeln('%s.writeShort(%s);'%(stream,val))
+			sw.writeln('RpcBinarySerializer.writeShort(%s,%s);;'%(val,stream))
 		if typ.type =='int':
-			sw.writeln('%s.writeInt(%s);'%(stream,val))
+			# sw.writeln('%s.writeInt(%s);'%(stream,val))
+			sw.writeln('RpcBinarySerializer.writeInt(%s,%s);'%(val,stream))
 		if typ.type =='long':
-			sw.writeln('%s.writeLong(%s);'%(stream,val))
+			# sw.writeln('%s.writeLong(%s);'%(stream,val))
+			sw.writeln('RpcBinarySerializer.writeLong(%s,%s);'%(val,stream))
 		if typ.type =='float':
-			sw.writeln('%s.writeFloat(%s);'%(stream,val))
+			# sw.writeln('%s.writeFloat(%s);'%(stream,val))
+			sw.writeln('RpcBinarySerializer.writeFloat(%s,%s);'%(val,stream))
 		if typ.type =='double':
-			sw.writeln('%s.writeDouble(%s);'%(stream,val))
+			# sw.writeln('%s.writeDouble(%s);'%(stream,val))
+			sw.writeln('RpcBinarySerializer.writeDouble(%s,%s);'%(val,stream))
 		if typ.type =='string':
-			v = sw.newVariant('sb')
-			sw.writeln('byte[] %s = %s.getBytes();'%(v,val))
-			sw.writeln('%s.writeInt(%s.length);'%(stream,v))
-			sw.writeln('%s.write(%s,0,%s.length);'%(stream,v,v))
-
+			# v = sw.newVariant('sb')
+			# sw.writeln('byte[] %s = %s.getBytes();'%(v,val))
+			# sw.writeln('%s.writeInt(%s.length);'%(stream,v))
+			# sw.writeln('%s.write(%s,0,%s.length);'%(stream,v,v))
+			sw.writeln('RpcBinarySerializer.writeString(%s,%s)'%(val,stream))
 		if typ.type == 'bool':
-			sw.writeln('%s.writeByte( %s.booleanValue()?1:0);'%(stream,val))
+			# sw.writeln('%s.writeByte( %s.booleanValue()?1:0);'%(stream,val))
+			sw.writeln('RpcBinarySerializer.writeByte(%s?1:0,%s);'%(val,stream))
 		return s
 
 	@staticmethod
@@ -850,9 +857,11 @@ def createProxy(e,sw,ifidx):
 		sw.writeln('try{').idt_inc()
 		if len(m.params):
 			bos = sw.newVariant('bos')
-			sw.writeln('ByteArrayOutputStream %s = new ByteArrayOutputStream();'%bos)
+			# sw.writeln('ByteArrayOutputStream %s = new ByteArrayOutputStream();'%bos)
+			sw.writeln('MemoryStream %s = new MemoryStream();'%bos)
 			dos = sw.newVariant('dos')
-			sw.writeln('DataOutputStream %s = new DataOutputStream(%s);'%(dos,bos))
+			# sw.writeln('DataOutputStream %s = new DataOutputStream(%s);'%(dos,bos))
+			sw.writeln('BinaryWriter %s = new BinaryWriter(%s);'%(dos,bos))
 
 		for p in m.params:
 			if isinstance(p.type,Builtin):

@@ -13,21 +13,18 @@ namespace Tce {
 
         }
 
-        public bool marshall(MemoryStream d){
+        public bool marshall(Stream d){
             try{
                 BinaryWriter writer = new BinaryWriter(d);
                 if (_props == null){
                     _props = new Dictionary<string, string>();
                 }
-                //d.writeInt(_props.size());
-                writer.Write((uint)_props.Count);
-
-                UTF8Encoding utf8 = new UTF8Encoding();
+                RpcBinarySerializer.writeInt(_props.Count,writer);
                 foreach (KeyValuePair<string, string> kv in _props) {
-                    writer.Write((uint)kv.Key.Length);
-                    writer.Write( utf8.GetBytes(kv.Key));
-                    writer.Write((uint)kv.Value.Length);
-                    writer.Write(utf8.GetBytes(kv.Value));
+                    RpcBinarySerializer.writeInt(kv.Key.Length,writer);
+                    RpcBinarySerializer.writeString(kv.Key,writer);
+                    RpcBinarySerializer.writeInt(kv.Value.Length,writer);
+                    RpcBinarySerializer.writeString(kv.Value,writer);
                 }
             }
             catch (Exception e){
@@ -38,24 +35,19 @@ namespace Tce {
 
         //BinaryReader 以 Little-Endian 格式读取此数据类型。
        // Network Order is Big-Endian 
-        public bool unmarshall(MemoryStream d){
+        public bool unmarshall(Stream d){
             try{
                 BinaryReader reader = new BinaryReader(d);
                 int size = 0;
-                size = IPAddress.NetworkToHostOrder( reader.ReadInt32() );
-
+               
+                size = RpcBinarySerializer.readInt(reader);
                 string key, val;
                 byte[] bytes;
                 int len = 0;
-                UTF8Encoding utf8 = new UTF8Encoding();
+                
                 for (int n = 0; n < size; n++) {
-                    len = IPAddress.NetworkToHostOrder( reader.ReadInt32() );
-                    bytes = reader.ReadBytes(len);
-                    key = utf8.GetString(bytes);
-
-                    len = IPAddress.NetworkToHostOrder(reader.ReadInt32());
-                    bytes = reader.ReadBytes(len);
-                    val = utf8.GetString(bytes);
+                    key = RpcBinarySerializer.readString(reader);
+                    val = RpcBinarySerializer.readString(reader);                    
                     _props.Add(key,val);
                 }
             }catch (Exception e){
@@ -101,8 +93,8 @@ namespace Tce {
             int size = 0;
             string key, val;
             UTF8Encoding utf8 = new UTF8Encoding();
-            foreach (KeyValuePair<string, string> kv in _props) {
-                size += utf8.GetByteCount(kv.Key) + utf8.GetByteCount(kv.Value) + 8;
+            foreach (KeyValuePair<string, string> kv in _props) {                
+                size += RpcBinarySerializer.getByteCount(kv.Key) + RpcBinarySerializer.getByteCount(kv.Value);
             }
             return size;
         }
