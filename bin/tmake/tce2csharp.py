@@ -291,7 +291,7 @@ class Builtin_Python:
 	def __init__(self):
 		pass
 
-	'java default: BIG_ENDIAN '
+	'csharp default: LITTLE_ENDIAN '
 	@staticmethod
 	def serial(typ,val,sw,stream):
 		# typ - builtin object ; val - variant name; var = d
@@ -322,7 +322,8 @@ class Builtin_Python:
 			sw.writeln('RpcBinarySerializer.writeString(%s,%s)'%(val,stream))
 		if typ.type == 'bool':
 			# sw.writeln('%s.writeByte( %s.booleanValue()?1:0);'%(stream,val))
-			sw.writeln('RpcBinarySerializer.writeByte(%s?1:0,%s);'%(val,stream))
+			# sw.writeln('RpcBinarySerializer.writeByte(%s?1:0,%s);'%(val,stream))
+			sw.writeln('RpcBinarySerializer.writeBool(%s);'%(val,stream))
 		return s
 
 	@staticmethod
@@ -330,29 +331,37 @@ class Builtin_Python:
 		s=''
 
 		if typ.type =='byte':
-			sw.writeln('%s = %s.get();'%(val,stream))
+			# sw.writeln('%s = %s.get();'%(val,stream))
+			sw.writeln('%s =RpcBinarySerializer.readByte(%s);'%(val,stream))
 		if typ.type =='short':
-			sw.writeln('%s = %s.getShort();'%(val,stream))
+			# sw.writeln('%s = %s.getShort();'%(val,stream))
+			sw.writeln('%s = RpcBinarySerializer.readShort(%s);'%(val,stream))
 		if typ.type =='int':
-			sw.writeln('%s = %s.getInt();'%(val,stream))
+			# sw.writeln('%s = %s.getInt();'%(val,stream))
+			sw.writeln('%s = RpcBinarySerializer.readInt(%s);'%(val,stream))
 		if typ.type =='long':
-			sw.writeln('%s = %s.getLong();'%(val,stream))
+			# sw.writeln('%s = %s.getLong();'%(val,stream))
+			sw.writeln('%s = RpcBinarySerializer.readLong(%s);'%(val,stream))
 		if typ.type =='float':
-			sw.writeln('%s = %s.getFloat();'%(val,stream))
+			# sw.writeln('%s = %s.getFloat();'%(val,stream))
+			sw.writeln('%s = RpcBinarySerializer.readFloat(%s);'%(val,stream))
 		if typ.type =='double':
-			sw.writeln('%s = %s.getDouble();'%(val,stream))
+			# sw.writeln('%s = %s.getDouble();'%(val,stream))
+			sw.writeln('%s = RpcBinarySerializer.readDouble(%s);'%(val,stream))
 		if typ.type =='string':
-			v = sw.newVariant('v')
-			sw.writeln('int %s = %s.getInt();'%(v,stream))
-			v2 = sw.newVariant('_sb')
-			sw.writeln('byte[] %s = new byte[%s];'%(v2,v))
-			sw.writeln('%s.get(%s);'%(stream,v2))
-			sw.writeln('%s = new String(%s);'%(val,v2))
+			sw.writeln('%s = RpcBinarySerializer.readString(%s);'%(val,stream))
+			# v = sw.newVariant('v')
+			# sw.writeln('int %s = %s.getInt();'%(v,stream))
+			# v2 = sw.newVariant('_sb')
+			# sw.writeln('byte[] %s = new byte[%s];'%(v2,v))
+			# sw.writeln('%s.get(%s);'%(stream,v2))
+			# sw.writeln('%s = new String(%s);'%(val,v2))
 
 		if typ.type == 'bool':
-			v = sw.newVariant('v')
-			sw.writeln('byte %s = %s.get();'%(v,stream))
-			sw.writeln('%s = %s==0?false:true;'%(val,v))
+			sw.writeln('%s = RpcBinarySerializer.readBool(%s);'%(val,stream))
+			# v = sw.newVariant('v')
+			# sw.writeln('byte %s = %s.get();'%(v,stream))
+			# sw.writeln('%s = %s==0?false:true;'%(val,v))
 
 		return s
 
@@ -366,18 +375,20 @@ def createCodeStruct(e,sw,idt):
 	pp =map(lambda x: '%s %s'%(x[1],x[0]),params)
 	ps = string.join(pp,',')
 
-	sw.writeln('import %s.*;'%sw.pkg_current())
-	for ref in module.ref_modules.keys():
-		if sw.pkg_current()!=ref:
-			sw.writeln('import %s;'%ref)
+	#--  following is useless in csharp.
 
-	sw.writeln('import java.io.*;')
-	sw.writeln('import java.nio.*;')
-	sw.writeln('import java.util.*;')
+	# sw.writeln('import %s.*;'%sw.pkg_current())
+	# for ref in module.ref_modules.keys():
+	# 	if sw.pkg_current()!=ref:
+	# 		sw.writeln('import %s;'%ref)
+	#
+	# sw.writeln('import java.io.*;')
+	# sw.writeln('import java.nio.*;')
+	# sw.writeln('import java.util.*;')
 
+	# -- end up --
 
 	sw.wln()
-
 	l ='public class %s{'%e.getName()
 	sw.writeln(l)
 	sw.writeln("// -- STRUCT -- ")
@@ -390,7 +401,7 @@ def createCodeStruct(e,sw,idt):
 		sw.writeln("public  %s %s = %s;"%(v,m.name,d))
 
 	sw.wln()
-	sw.writeln("//构造函数")
+	sw.writeln("//constructor def")
 	sw.writeln('public %s(){'%(e.getName(),) )
 	sw.idt_inc()
 	sw.wln().idt_dec()
@@ -414,20 +425,21 @@ def createCodeStruct(e,sw,idt):
 	#定义序列化函数
 	sw.wln()
 	sw.resetVariant()
-	sw.writeln("// return xml string")
-	sw.writeln('public boolean marshall(DataOutputStream d){').idt_inc()
+	sw.writeln("// function for data serialization")
+	# sw.writeln('public boolean marshall(DataOutputStream d){').idt_inc()
+	sw.writeln('public bool marshall(BinaryWriter d){').idt_inc()
 	sw.writeln('try{').idt_inc()
 	for m in e.list:
-
 #		print m,m.name,m.type.type,m.type.name
-		if isinstance(m.type,Builtin):
+		if isinstance(m.type,Builtin): # primitive dialect
 			Builtin_Python.serial(m.type, m.name,sw,'d')
 		elif isinstance(m.type,Sequence) or isinstance(m.type,Dictionary):
 			impled = False
 			if isinstance(m.type,Sequence) :
-				if m.type.type.name=='byte':
-					sw.writeln('d.writeInt(%s.length);'%(m.name))
-					sw.writeln('d.write(this.%s,0,%s.length);'%(m.name,m.name))
+				if m.type.type.name=='byte':  # sequence<byte> ->
+					# sw.writeln('d.writeInt(%s.length);'%(m.name))
+					# sw.writeln('d.write(this.%s,0,%s.length);'%(m.name,m.name))
+					sw.writeln('RpcBinarySerializer.writeBytes(%s);'%(m.name)) # write byte[]'s length
 					impled = True
 
 			if not impled:
@@ -447,12 +459,12 @@ def createCodeStruct(e,sw,idt):
 
 	#unmarshall()
 	sw.resetVariant()
-	sw.writeln("public boolean unmarshall(ByteBuffer d){" )
+	# sw.writeln("public boolean unmarshall(ByteBuffer d){" )
+	sw.writeln("public bool unmarshall(BinaryReader d){" )
 
 	sw.idt_inc()
-	sw.define_var("r","boolean","false")
+	sw.define_var("r","bool","false")
 	sw.writeln( "try{").idt_inc()
-
 
 	for m in e.list:
 		if isinstance(m.type,Builtin):
@@ -462,11 +474,12 @@ def createCodeStruct(e,sw,idt):
 			impled = False
 			if isinstance(m.type,Sequence):
 				if m.type.type.name == 'byte':
-					size = sw.newVariant('_s')
-					sw.writeln('int %s = d.getInt();'%(size))
+					# size = sw.newVariant('_s')
+					# sw.writeln('int %s = d.getInt();'%(size))
+					# sw.writeln('this.%s = new byte[%s];'%(m.name,size))
+					# sw.writeln('d.get(this.%s);'%m.name)
 
-					sw.writeln('this.%s = new byte[%s];'%(m.name,size))
-					sw.writeln('d.get(this.%s);'%m.name)
+					sw.writeln('this.%s = RpcBinarySerializer.readBytes(%s);'%(m.name,))
 					impled = True
 			if not impled:
 				v = sw.newVariant('_b')
@@ -1598,6 +1611,10 @@ lexparser.lang_kws = ['for','foreach' 'using', 'namespace','float',
 					  'as','object','using','namesapce',]
 lexparser.codecls = LanguageCSharp
 
+"""
+sequence<byte> ->  byte[]
+
+"""
 
 '''
 tce2csharp.py 生成代码的namespace的处理方式如同cpp处理方式。
