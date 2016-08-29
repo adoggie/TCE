@@ -492,7 +492,7 @@ def createCodeStruct(e,sw,idt):
 
 	sw.idt_dec()
 	sw.writeln('}catch(Exception e){' ).idt_inc()
-	sw.writeln('tce.RpcCommunicator.instance().getLogger().error(e.ToString());')
+	sw.writeln('RpcCommunicator.instance().getLogger().error(e.ToString());')
 	sw.writeln('r = false;')
 	sw.writeln('return r;' )
 	sw.scope_end()
@@ -777,18 +777,18 @@ def createCodeDictionary(e,sw,idt):
 			sw.writeln('%s.unmarshall(d);'%v)
 
 
-		sw.writeln("this.ds.put(%s,%s);"%(k,v))
+		# sw.writeln("this.ds.put(%s,%s);"%(k,v))
+		sw.writeln("this.ds.Add(%s,%s);"%(k,v))
 		sw.scope_end() # end for
 
 
 
 		sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
+		sw.writeln('RpcCommunicator.instance().logger.error(e.ToString());')
 		sw.writeln('return false;')
 		sw.scope_end() # end try{}
 
 		sw.wln()
-
-
 		sw.writeln('return true;')
 		sw.scope_end()	# end function
 
@@ -820,7 +820,7 @@ def createProxy(e,sw,ifidx):
 	#	sw.writeln("import %s.%s;"%(sw.pkg_current(), e.getName() ) )
 	sw.wln()
 	sw.writeln('public class %sProxy:RpcProxyBase{'%e.getName() ).idt_inc()
-	sw.writeln("//# -- INTERFACE PROXY -- ")
+	sw.writeln("//-- interface proxy -- ")
 	#
 	sw.wln()
 	sw.writeln("public %sProxy(RpcConnection conn){"%(e.getName())).idt_inc()
@@ -832,8 +832,7 @@ def createProxy(e,sw,ifidx):
 	sw.writeln('int type = RpcConstValue.CONNECTION_SOCK;')
 	sw.writeln('if (ssl_enable) type |= RpcConstValue.CONNECTION_SSL;')
 	sw.writeln('RpcConnection conn = RpcCommunicator.instance().'
-			   'createConnection(type,'
-			   'host,port);')
+			   'createConnection(type,host,port);')
 
 
 	sw.writeln('%sProxy prx = new %sProxy(conn);'%(e.name,e.name))
@@ -871,8 +870,11 @@ def createProxy(e,sw,ifidx):
 			list.append('%s %s'%(p.type.getMappingTypeName(module),p.id) )
 		s = string.join( list,',')
 		# 函数定义开始
-
-
+		"""
+		 type fun_xxx( p1,p2,p3,..){
+		    fun_xxx(p1,p2,p3,..,timeout,props);
+		 }
+		"""
 		# sw.writeln('public %s %s(%s) throws RpcException{'%(m.type.getMappingTypeName(module),m.name,s) ).idt_inc()
 		sw.writeln('public %s %s(%s){'%(m.type.getMappingTypeName(module),m.name,s) ).idt_inc()
 		if m.type.name!='void':
@@ -883,17 +885,18 @@ def createProxy(e,sw,ifidx):
 
 		_params = string.join(_params,',')
 		if _params: _params +=','
-		sw.ostream.write('%s(%RpcCommunicator.instance().getProperty_DefaultCallWaitTime(),null);'%(m.name,_params) )
+
+		sw.ostream.write('%s(%sRpcCommunicator.instance().getProperty_DefaultCallWaitTime(),null);'%(m.name,_params) )
 		sw.wln() #.idt_inc().wln()
 		sw.scope_end()
 
 		if s: s = s + ','
 		#-- 生成同步函数
+		# type fun_xxx(p1,p2,..,timeout,props)
+
 		sw.writeln('// timeout - msec ,  0 means waiting infinitely')
 		# sw.writeln('public %s %s(%sint timeout,HashMap<String,String> props) throws RpcException{'%(m.type
-		sw.writeln('public %s %s(%sint timeout,Dictionary<string,string> props) {'%(m.type
-																									.getMappingTypeName(module),
-																									m.name,s) ).idt_inc()
+		sw.writeln('public %s %s(%sint timeout,Dictionary<string,string> props) {'%(m.type.getMappingTypeName(module),m.name,s) ).idt_inc()
 		sw.resetVariant()
 		r = sw.newVariant('r')
 		sw.define_var(r,'bool','false')
@@ -920,10 +923,11 @@ def createProxy(e,sw,ifidx):
 				impled = False
 				if isinstance(p.type,Sequence):
 					if p.type.type.name == 'byte':
-						sw.writeln('%s.writeInt(%s.length);'%(dos,p.id))
-						sw.writeln('%s.write(%s,0,%s.length);'%(dos,p.id,p.id))
+						# sw.writeln('%s.writeInt(%s.length);'%(dos,p.id))
+						# sw.writeln('%s.write(%s,0,%s.length);'%(dos,p.id,p.id))
+						# write " sequence<byte> into stream "
+						sw.writeln('RpcBinarySerializer.writeBytes(%s,%s);'%(p.id,dos))
 						impled = True
-
 
 				if not impled:
 					v = sw.newVariant('c')
@@ -931,29 +935,33 @@ def createProxy(e,sw,ifidx):
 					sw.writeln('%s.marshall(%s);'%(v,dos))
 			else:
 				sw.writeln("%s.marshall(%s);"%(p.id,dos))
+
 		if len(m.params):
-			sw.writeln('%s.paramstream = %s.toByteArray();'%(m1,bos))
+			# sw.writeln('%s.paramstream = %s.toByteArray();'%(m1,bos))
+			# append parameterized bytes into message
+			sw.writeln('%s.paramstream = %s.ToArray();'%(m1,bos))
 		sw.writeln("%s.prx = this;"%m1)
 		sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
-		sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_DATADIRTY,e.toString());')
+		sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_DATADIRTY,e.ToString());')
 		sw.scope_end() # end try()
-		# 完成参数打包
-		sw.writeln('synchronized(%s){'%m1).idt_inc()
+		# so far 已经完成参数打包,开始数据发送
+
+		# sw.writeln('synchronized(%s){'%m1).idt_inc()
 		sw.writeln("%s = this.conn.sendMessage(%s);"%(r,m1))
 		sw.writeln("if(!%s){"%r).idt_inc()
 		sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_SENDFAILED);')
 		sw.scope_end() # end if()
 
-		#BEGIN WAITING
+		#这里进行rpc发送之后等待响应消息到达  BEGIN WAITING
 		sw.writeln('try{').idt_inc()
-		# sw.writeln('synchronized(%s){'%m1).idt_inc()
-		sw.writeln('if( timeout > 0) %s.wait(timeout);'%m1)
-		sw.writeln('else %s.wait();'%m1)
-		# sw.scope_end() # end synchronized()
+
+		sw.writeln('if( timeout > 0) %s.WaitOne(timeout);'%m1)
+		sw.writeln('else %s.WaitOne( RpcCommunicator.instance().getProperty_DefaultCallWaitTime() );'%m1)
+
 		sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
-		sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_INTERNAL_EXCEPTION,e.getMessage());')
+		sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_INTERNAL_EXCEPTION,e.ToString());')
 		sw.scope_end()
-		sw.scope_end() # end synchronized()
+		# sw.scope_end() # end synchronized()
 
 		#检测错误码
 		sw.writeln('if (%s.errcode != RpcConstValue.RPCERROR_SUCC){'%m1).idt_inc()

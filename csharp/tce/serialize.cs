@@ -36,7 +36,7 @@ namespace Tce {
             return count + 4;
         }
 
-        public static short readByte(BinaryReader reader) {
+        public static byte readByte(BinaryReader reader) {
             return reader.ReadByte();
         }
 
@@ -98,6 +98,30 @@ namespace Tce {
             writer.Write(bytes);
         }
 
+        public static bool readBool(BinaryReader reader) {
+            byte val = readByte(reader);
+            return val == 1 ? true : false;
+        }
+
+        public static void writeBool(bool value, BinaryWriter writer) {
+            byte byteval = value ? (byte)1 : (byte)0;
+            writeByte(byteval,writer);
+        }
+
+        //readBytes 
+        // 1. read 4 bytes header 
+        // 2. read rest data 
+        public static byte[] readBytes(BinaryReader reader) {
+            byte[] value = null;
+            int size = reader.ReadInt32();
+            value = reader.ReadBytes(size);
+            return value;
+        }
+
+        public static void writeBytes(byte[] value, BinaryWriter writer) {
+            writeInt(value.Length,writer);
+            writer.Write(value);
+        }
     }
    
 
