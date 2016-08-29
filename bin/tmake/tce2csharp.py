@@ -492,7 +492,7 @@ def createCodeStruct(e,sw,idt):
 
 	sw.idt_dec()
 	sw.writeln('}catch(Exception e){' ).idt_inc()
-	sw.writeln('tce.RpcCommunicator.instance().getLogger().error(e.getMessage());')
+	sw.writeln('tce.RpcCommunicator.instance().getLogger().error(e.ToString());')
 	sw.writeln('r = false;')
 	sw.writeln('return r;' )
 	sw.scope_end()
@@ -508,42 +508,47 @@ def createCodeSequence(e,sw,idt):
 	module = e.container
 	sw.wln()
 
-	sw.writeln('import %s.*;'%(sw.pkg_current()) )
-	for ref in module.ref_modules.keys():
-		if sw.pkg_current()!=ref:
-			sw.writeln('import %s;'%ref)
+	# sw.writeln('import %s.*;'%(sw.pkg_current()) )
+	# for ref in module.ref_modules.keys():
+	# 	if sw.pkg_current()!=ref:
+	# 		sw.writeln('import %s;'%ref)
+	#
+	# sw.writeln('import java.io.*;')
+	# sw.writeln('import java.nio.*;')
+	# sw.writeln('import java.util.*;')
+	# sw.wln()
 
-#	sw.writeln('import tce.*;')
-	sw.writeln('import java.io.*;')
-	sw.writeln('import java.nio.*;')
-	sw.writeln('import java.util.*;')
-	sw.wln()
-
+	# sequence helper class defination
 	sw.writeln('public class %shlp{'%e.getName() )
 	sw.idt_inc()
-	sw.writeln('//# -- SEQUENCE --')
+	sw.writeln('//# -- sequence helper class --')
 #	sw.wln().writeln("public var ds:Array = null;")
 	sw.wln()
-	sw.writeln("public Vector<%s> ds = null;"%e.type.getMappingTypeName(module) )
-	sw.writeln('public %shlp(Vector<%s> ds){'%(e.getName(),e.type.getMappingTypeName(module)) ).idt_inc()
+	sw.writeln("public List<%s> ds = null;"%e.type.getMappingTypeName(module) )
+	sw.writeln('public %shlp(List<%s> ds){'%(e.getName(),e.type.getMappingTypeName(module)) ).idt_inc()
 	sw.writeln('this.ds = ds;')
 	sw.scope_end().wln()
 
 
-	sw.writeln('public boolean marshall(DataOutputStream d){').idt_inc()
+	# sw.writeln('public boolean marshall(DataOutputStream d){').idt_inc()
+	sw.writeln('public bool marshall(BinaryWriter d){').idt_inc()
 	sw.writeln('try{').idt_inc()
-	sw.writeln("d.writeInt(this.ds.size());")
-	sw.writeln('for(%s item : this.ds){'%e.type.getMappingTypeName(module) ).idt_inc()
+	# sw.writeln("d.writeInt(this.ds.size());")
+	sw.writeln('RpcBinarySeriliazer.writeInt(this.ds.Length,d);')
+	# sw.writeln('for(%s item : this.ds){'%e.type.getMappingTypeName(module) ).idt_inc()
+	sw.writeln('foread(%s item in this.ds){'%e.type.getMappingTypeName(module) ).idt_inc()
 
 	if isinstance( e.type,Builtin):
 		Builtin_Python.serial(e.type,'item',sw,'d')
 		#数组不能直接存储 原始数据类型 builtin_type
 	elif isinstance(e.type,Sequence) or isinstance(e.type,Dictionary):
 		impled = False
-		if isinstance(e.type,Sequence):
+		if isinstance(e.type,Sequence): # just sequence with parameterized 'byte'
 			if e.type.type.name == 'byte':
-				sw.writeln('d.writeInt(item.length);')
-				sw.writeln('d.write(item,0,item.length);')
+				# sw.writeln('d.writeInt(item.length);')
+				# sw.writeln('d.write(item,0,item.length);')
+
+				sw.writeln('RpcBinarySerializer.writeBytes(item,d);')
 				impled = True
 		if not impled:
 			v = sw.newVariant('_b')
@@ -554,39 +559,49 @@ def createCodeSequence(e,sw,idt):
 
 	sw.scope_end()	#end for
 	sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
+	sw.writeln('RpcCommunicator.install().logger.error(e.ToString());')
 	sw.writeln('return false;')
-	sw.scope_end();
+	sw.scope_end()
 
 	sw.writeln("return true;")
 	sw.scope_end() # end function
 	sw.wln()
-	#def unmarshall()
 
-	sw.writeln('public boolean unmarshall(ByteBuffer d){').idt_inc()
+	#-- function "unmarshall" --
+
+	# sw.writeln('public boolean unmarshall(ByteBuffer d){').idt_inc()
+	sw.writeln('public bool unmarshall(BinaryReader d){').idt_inc()
 	vsize = sw.newVariant('_size')
 
 	sw.writeln('int %s = 0;'%vsize)
 
 	sw.writeln('try{').idt_inc()
-	sw.writeln('%s = d.getInt();'%vsize)
-	sw.writeln("for(int _p=0;_p < %s;_p++){"%(vsize)).idt_inc()
+	# sw.writeln('%s = d.getInt();'%vsize)
+	sw.writeln('%s = RpcBinarySerializer.readInt(d);'%vsize)
+	v_p = sw.newVariant('_p')
+	# sw.writeln("for(int _p=0;_p < %s;_p++){"%(vsize)).idt_inc()
+	sw.writeln("for(int %s = 0;%s < %s;%s++){"%(v_p,v_p,vsize,v_p)).idt_inc()
 
 	v = sw.newVariant('_b')
 	if isinstance(e.type,Builtin): #无法包装直接的原始数据数组
-		sw.define_var("_o",e.type.getMappingTypeName(module),e.type.getTypeDefaultValue(module) )
-		Builtin_Python.unserial(e.type,'_o',sw,'d')
-		sw.writeln("this.ds.add(_o);")
+		# sw.define_var("_o",e.type.getMappingTypeName(module),e.type.getTypeDefaultValue(module) )
+		sw.define_var("%s"%v,e.type.getMappingTypeName(module),e.type.getTypeDefaultValue(module) )
+		Builtin_Python.unserial(e.type,'%s'%v,sw,'d')
+		# sw.writeln("this.ds.add(_o);")
+		sw.writeln("this.ds.Add(%s);"%v)
 
 	elif isinstance( e.type,Sequence) or isinstance(e.type,Dictionary):
 		impled = False
 		if isinstance(e.type,Sequence):
 			if e.type.type.name == 'byte':
-				size = sw.newVariant('_s')
+				# size = sw.newVariant('_s')
 				bf = sw.newVariant('_bf')
-				sw.writeln('int %s = d.getInt();'%(size))
-				sw.writeln('byte[] %s = new byte[%s];'%(bf,size))
-				sw.writeln('d.get(%s);'%bf)
-				sw.writeln('this.ds.add(%s);'%bf)
+				# sw.writeln('int %s = d.getInt();'%(size))
+				# sw.writeln('byte[] %s = new byte[%s];'%(bf,size))
+				# sw.writeln('d.get(%s);'%bf)
+				sw.writeln('byte[] %s = RpcBinarySerializer.readBytes(d);'%bf)
+				# sw.writeln('this.ds.add(%s);'%bf)
+				sw.writeln('this.ds.Add(%s);'%bf)
 				impled = True
 
 		if not impled:
@@ -594,14 +609,17 @@ def createCodeSequence(e,sw,idt):
 			c = sw.newVariant('_b')
 			sw.define_var(c,"%shlp"%e.type.name,"new %shlp(%s)"%(e.type.name,v))
 			sw.writeln("%s.unmarshall(d);"%(c))
-			sw.writeln("this.ds.add(%s);"%v)
+			# sw.writeln("this.ds.add(%s);"%v)
+			sw.writeln("this.ds.Add(%s);"%v)
 	else:
 		sw.define_var(v,e.type.name,"new %s()"%e.type.name)
 		sw.writeln("%s.unmarshall(d);"%v)
-		sw.writeln("this.ds.add(%s);"%v)
+		# sw.writeln("this.ds.add(%s);"%v)
+		sw.writeln("this.ds.Add(%s);"%v)
 	sw.scope_end() # end for{}
 
 	sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
+	sw.writeln('RpcCommunicator.instance().logger.error(e.ToString());')
 	sw.writeln('return false;')
 	sw.scope_end()
 
@@ -616,20 +634,21 @@ def createCodeSequence(e,sw,idt):
 def createCodeDictionary(e,sw,idt):
 	if True:
 		module = e.container
-		sw.wln()
 
-		sw.writeln('import %s.*;'%(sw.pkg_current()) )
-		for ref in module.ref_modules.keys():
-			if sw.pkg_current()!=ref:
-				sw.writeln('import %s;'%ref)
+		# sw.wln()
+		# sw.writeln('import %s.*;'%(sw.pkg_current()) )
+		# for ref in module.ref_modules.keys():
+		# 	if sw.pkg_current()!=ref:
+		# 		sw.writeln('import %s;'%ref)
+		#
+		# sw.writeln('import tce.*;')
+		# sw.writeln('import java.util.*;')
+		# sw.writeln('import java.io.*;')
+		# sw.writeln('import java.nio.*;')
 
-		sw.writeln('import tce.*;')
-		sw.writeln('import java.util.*;')
-		sw.writeln('import java.io.*;')
-		sw.writeln('import java.nio.*;')
 		sw.wln()
 		sw.writeln('public class %shlp {'%e.getName() ).idt_inc()
-		sw.writeln('//# -- THIS IS DICTIONARY! --')
+		sw.writeln('//-- dictionary --')
 	#	sw.writeln('public var ds :HashMap = null;').wln()
 		sw.writeln('public %s ds = null;'%(e.getMappingTypeName(module))).wln()
 		sw.writeln('public %shlp(%s ds){'%(e.name,e.getMappingTypeName(module)) ).idt_inc()	#将hash数据{}传递进来
@@ -639,18 +658,24 @@ def createCodeDictionary(e,sw,idt):
 
 		sw.resetVariant()
 		# -- FUNCTION marshall()  BEGIN --
-		sw.writeln('public boolean marshall(DataOutputStream d){').idt_inc()
+		# sw.writeln('public boolean marshall(DataOutputStream d){').idt_inc()
+		sw.writeln('public bool marshall(BinaryWriter d){').idt_inc()
 
 		sw.writeln('try{').idt_inc()
-		sw.writeln('d.writeInt(this.ds.size());')
+		# sw.writeln('d.writeInt(this.ds.size());')
+
+		sw.writeln('RpcBinarySerializer.writeInt(this.ds.Count,d);')
 
 		k = sw.newVariant('_k')
 		v = sw.newVariant('_v')
-		sw.writeln('for( %s %s : this.ds.keySet()){'%(e.first.getMappingTypeName(module),k )).idt_inc()
-		sw.define_var(v,e.second.getMappingTypeName(module),'ds.get(%s)'%(k))
+		kv = sw.newVariant('_kv')
+		# sw.writeln('for( %s %s : this.ds.keySet()){'%(e.first.getMappingTypeName(module),k )).idt_inc()
+		sw.writeln('foreach( KeyValuePair<%s,%s> %s in this.ds ){'%(e.first.getMappingTypeName(module),e.second.getMappingTypeName(module),kv )).idt_inc()
+
+		# sw.define_var(v,e.second.getMappingTypeName(module),'ds.get(%s)'%(k))
 		# do key
 		if isinstance( e.first,Builtin):
-			Builtin_Python.serial(e.first,k,sw,'d')
+			Builtin_Python.serial(e.first,'%s.Key'%kv,sw,'d')
 		elif isinstance( e.first,Sequence) or isinstance(e.first,Dictionary):
 			print 'error: <KEY> in dictionary not be in [sequence,dictionary]!'
 			sys.exit(0)
@@ -659,63 +684,74 @@ def createCodeDictionary(e,sw,idt):
 			# sw.define_var(c,'%shlp'%e.first.name,'new %shlp(%s)'%(e.first.name,k) )
 			# sw.writeln('%s.marshall(d);'%c)
 		else:
-			sw.writeln("%s.marshall(d);"%k)
-		# do value
+			sw.writeln("%s.Key.marshall(d);"%kv)
+
+		# do value (second field)
 		if isinstance( e.second,Builtin):
-			Builtin_Python.serial(e.second,v,sw,'d')
+			Builtin_Python.serial(e.second,'%s.Value'%kv,sw,'d')
 #			sw.scope_end()
 		elif isinstance( e.second,Sequence) or isinstance(e.second,Dictionary):
 			impled = False
 			if isinstance( e.second,Sequence):
 				if e.second.type.name == 'byte':
-					sw.writeln('d.writeInt(%s.length);'%v)
-					sw.writeln('d.write(%s,0,%s.length);'%(v,v))
+					# sw.writeln('d.writeInt(%s.length);'%v)
+					# sw.writeln('d.write(%s,0,%s.length);'%(v,v))
+					sw.writeln('RpcBinarySerializer.writeBytes(%s.Value,d);'%kv)
 					impled = True
 
 			if not impled:
 				c = sw.newVariant('_c')
-				sw.define_var(c,'%shlp'%e.second.name,'new %shlp(%s)'%(e.second.name,v) )
+				sw.define_var(c,'%shlp'%e.second.name,'new %shlp(%s.Value)'%(e.second.name,kv) )
 				sw.writeln('%s.marshall(d);'%c)
 		else:
 			sw.writeln("%s.marshall(d);"%v)
 		sw.scope_end() # end for
 
 		sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
+		sw.writeln('RpcCommunicator.instance().logger.error(e.ToString());')
 		sw.writeln('return false;')
 		sw.scope_end() # end try{}
 		sw.writeln('return true;')
 		sw.scope_end() # end function
 		sw.wln()
 
-		#--	 FUNCTION  unmarshall() BEGIN --
-		sw.writeln("// unmarshall()")
+
+		"""
+		dictionary<k,v> 的key必须是 primitive 类型
+		"""
+		sw.writeln("// dictionay function unmarshall")
 		sw.resetVariant()
-		sw.writeln('public boolean unmarshall(ByteBuffer d){').idt_inc()
+		# sw.writeln('public boolean unmarshall(ByteBuffer d){').idt_inc()
+		sw.writeln('public bool unmarshall(BinaryReader d){').idt_inc()
 		vsize = sw.newVariant('_size')
 		sw.writeln('int %s = 0;'%vsize)
 
 		sw.writeln('try{').idt_inc()
-		sw.writeln('%s = d.getInt();'%vsize)
 
-	#	sw.writeln("var r:Boolean = false;")
-	#	sw.writeln("try{").idt_inc()
-	#	sw.define_var("_size","uint","0")
-	#	sw.writeln("_size = d.readUnsignedInt();")
+		# sw.writeln('%s = d.getInt();'%vsize)
 
-		sw.writeln("for(int _p=0;_p < %s;_p++){"%vsize).idt_inc()
+		sw.writeln('%s = RpcBinarySerializer.readInt(d);'%vsize)
+
+
+		v_p = sw.newVariant('_vp')
+		sw.writeln("for(int %s = 0; %s < %s; %s++){"%(v_p,v_p,vsize,v_p)).idt_inc()
 		k = sw.newVariant('_k')
 		v = sw.newVariant('_v')
 		c = sw.newVariant('_c')
+
 		sw.define_var(k,e.first.getMappingTypeName(module),e.first.getTypeDefaultValue(module) )
 		if isinstance(e.first,Builtin):
 			Builtin_Python.unserial(e.first,k,sw,'d')
+
 		elif isinstance(e.first,Sequence) or isinstance(e.first,Dictionary):
-			print 'error: <KEY> in dictionary not be in [sequence,dictionary]!'
+			print 'error: dictionary<KEY,..> in dictionary cannot be in [ sequence,dictionary ]!'
 			sys.exit(0)
 			# sw.define_var(c,'%shlp'%e.first.name,'new %shlp(%s)'%(e.first.name,k))
 			# sw.writeln('%s.unmarshall(d);'%(c))
 		else:
-			sw.writeln('%s.unmarshall(d);'%k)
+			# sw.writeln('%s.unmarshall(d);'%k)
+			print 'error: dictionary<KEY,..>  key must not be structure or complexed object !'
+			sys.exit(0)
 
 		c = sw.newVariant('_c')
 		sw.define_var(v,e.second.getMappingTypeName(module),e.second.getTypeDefaultValue(module) )
@@ -725,12 +761,13 @@ def createCodeDictionary(e,sw,idt):
 			impled = False
 			if isinstance(e.second,Sequence):
 				if e.second.type.name == 'byte':
-					size = sw.newVariant('_s')
-					bf = sw.newVariant('_bf')
-					sw.writeln('int %s = d.getInt();'%(size))
-					sw.writeln('%s = new byte[%s];'%(v,size))
-					sw.writeln('d.get(%s);'%v)
-					# sw.writeln('%s.add(%s);'%(v,bf))
+					# size = sw.newVariant('_s')
+					# bf = sw.newVariant('_bf')
+					# sw.writeln('int %s = d.getInt();'%(size))
+					# sw.writeln('%s = new byte[%s];'%(v,size))
+					# sw.writeln('d.get(%s);'%v)
+					sw.writeln('%s = RpcBinarySerializer.readBytes(d);'%v)
+
 					impled = True
 
 			if not impled:
