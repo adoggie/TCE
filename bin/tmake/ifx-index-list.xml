@@ -1,0 +1,11 @@
+
+<!-- define index of interface and function -->
+
+<interfaces>
+    <if name="sns.IMessageServer" index="100" delegate_expose="false" >
+        <functions>
+            <f name="onUserOnLine" index="1"/>
+            <f name="postMessage" index="5"/>
+        </functions>
+    </if>
+</interfaces>

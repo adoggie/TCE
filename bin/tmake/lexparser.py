@@ -339,7 +339,7 @@ class Struct(Container,Contained,TypeBase):
 
 
 	def getTypeDefaultValue(self,call_module):
-		return codecls.Struct.defaultValue(self.getTypeName(call_module))
+		return codecls.Struct.defaultValue(self,call_module)
 
 		# if language == 'py':
 		# 	return '%s()'%self.getTypeName(call_module)
@@ -464,7 +464,7 @@ class Builtin(TypeBase):
 		return Builtin.tables.count(type)
 
 	def getTypeDefaultValue(self,call_module=''):
-		codecls.Builtin.defaultValue(self)
+		return codecls.Builtin.defaultValue(self)
 
 		# r = 'None'
 		# type = self.type
@@ -527,6 +527,8 @@ class Builtin(TypeBase):
 		return r
 
 	def getMappingTypeName(self,call_module=''):
+		return codecls.Builtin.typeName(self)
+
 		r = '-^|^*'*5
 		if language in ('py','js','python'):
 			r = ''

@@ -1,0 +1,3 @@
+sns.IMessageServer=100,false
+sns.ITerminal= 201,true
+

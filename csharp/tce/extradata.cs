@@ -42,8 +42,8 @@ namespace Tce {
                
                 size = RpcBinarySerializer.readInt(reader);
                 string key, val;
-                byte[] bytes;
-                int len = 0;
+                //byte[] bytes;
+                //int len = 0;
                 
                 for (int n = 0; n < size; n++) {
                     key = RpcBinarySerializer.readString(reader);
@@ -91,7 +91,7 @@ namespace Tce {
        // cha ,java 里面有个bug啊，计算datasize有问题，回过头去改一下(python,...其他有没有问题啊，查查！）
         public int datasize(){
             int size = 0;
-            string key, val;
+            //string key, val;
             UTF8Encoding utf8 = new UTF8Encoding();
             foreach (KeyValuePair<string, string> kv in _props) {                
                 size += RpcBinarySerializer.getByteCount(kv.Key) + RpcBinarySerializer.getByteCount(kv.Value);

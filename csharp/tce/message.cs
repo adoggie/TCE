@@ -22,7 +22,7 @@ namespace Tce {
         public int calltype = 0;            //rpc调用方式
         public int ifidx = 0;               //调用接口编号
         public int opidx = 0;               //接口内函数编号
-        public int errcode = RpcError.RPCERROR_SUCC;
+        public int errcode = RpcException.RPCERROR_SUCC;
         public int call_id = 0;             //调用者类型
         public int paramsize = 0;           //参数个数
         public byte[] paramstream = null;
@@ -38,7 +38,7 @@ namespace Tce {
         public object cookie;
         public int status;  // 0 means to send
         public RpcMessage result;
-        internal AutoResetEvent ev = new AutoResetEvent(false);
+        public AutoResetEvent ev = new AutoResetEvent(false);
 
         public RpcMessage(int calltype = UNDEFINED) {
             this.calltype = calltype;
@@ -113,11 +113,11 @@ namespace Tce {
         private string _token = null;
         private bool _execInMainThread = false;
 
-        public void callReturn(RpcMessage m1, RpcMessage m2){
+        public virtual void callReturn(RpcMessage m1, RpcMessage m2){
 
         }
 
-        public void onError(int errorcode){
+        public virtual void onError(int errorcode){
 
         }
     }

@@ -23,10 +23,10 @@ namespace Tce
         }
 
         private string _id;
-        private Dictionary<int, RpcServantDelegate> _servants;
-        private List<RpcConnection> _conns;
+        private Dictionary<int, RpcServantDelegate> _servants = new Dictionary<int, RpcServantDelegate>();
+        private List<RpcConnection> _conns = new List<RpcConnection>();
         private Settings _settings = new Settings();        
-        private List<RpcConnectionAcceptor> _acceptors; //一个adapter中允许打开多种服务接收远端客户请求连接到达
+        private List<RpcConnectionAcceptor> _acceptors = new List<RpcConnectionAcceptor>(); //一个adapter中允许打开多种服务接收远端客户请求连接到达
         private RpcMessageDispatcher _dispatcher;
 
         public string id
@@ -139,7 +139,7 @@ namespace Tce
             if ((m.calltype & RpcMessage.CALL) != 0) {
                 lock (_servants) {
                     if (!_servants.ContainsKey(m.ifidx)) {
-                        doError( RpcError.RPCERROR_INTERFACE_NOTFOUND,m);
+                        doError( RpcException.RPCERROR_INTERFACE_NOTFOUND,m);
                         return;
                     }
                     dg = _servants[m.ifidx];

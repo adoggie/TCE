@@ -135,7 +135,7 @@ def getInterfaceIndexWithName(name):
 				# index =params[0]
 				ifidx_list[ifname] = cfgs
 		else:
-			print 'file:<%s> not found...'%ifxfile
+			print 'warning: file<%s> not found...'%ifxfile
 			ifidx_list ={}
 	# print ifidx_list,name
 	cfgs  = ifidx_list.get(name)

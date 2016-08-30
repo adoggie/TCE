@@ -7,24 +7,22 @@ using System.Threading;
 
 namespace Tce {
 
-   
-
     class RpcCommunicator:RpcMessageDispatcher.Client {
 
         public class Settings {
-            public string name;     // server name 
+            public string name ="";     // server name 
             public int threadNum = 1; // 默认启动 1 条处理线程
             public int callwait = 1000*30;
         }
 
         private int _sequence = 0;
-        private Dictionary<string, RpcAdapter> _adapters;
+        private Dictionary<string, RpcAdapter> _adapters = new Dictionary<string, RpcAdapter>();
         private static RpcCommunicator _handle;
-        private List<RpcMessage> _pendingMsgList;
+        private List<RpcMessage> _pendingMsgList = new List<RpcMessage>();
 
         private RpcMessageDispatcher _dispatcher;
-        private Dictionary<int, RpcMessage> _cachedMsgList;
-        private Settings _settings;
+        private Dictionary<int, RpcMessage> _cachedMsgList = new Dictionary<int, RpcMessage>();
+        private Settings _settings = new Settings();
 
         RpcCommunicator() : base("communicator") {
             

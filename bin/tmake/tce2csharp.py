@@ -30,14 +30,15 @@ NEWLINE = '\n'
 ostream = sys.stdout
 
 headtitles='''
+/*
 #---------------------------------
 #  - TCE -
-#  Tiny Communication Engine
+#  Tiny Communication Engine (Csharp version)
 #
-#  sw2us.com copyright @2012
+#  sw2us.com copyright @2016
 #  bin.zhang@sw2us.com / qq:24509826
 #---------------------------------
-
+*/
 '''+NEWLINE
 
 
@@ -323,11 +324,11 @@ class Builtin_Python:
 			# sw.writeln('byte[] %s = %s.getBytes();'%(v,val))
 			# sw.writeln('%s.writeInt(%s.length);'%(stream,v))
 			# sw.writeln('%s.write(%s,0,%s.length);'%(stream,v,v))
-			sw.writeln('RpcBinarySerializer.writeString(%s,%s)'%(val,stream))
+			sw.writeln('RpcBinarySerializer.writeString(%s,%s);'%(val,stream))
 		if typ.type == 'bool':
 			# sw.writeln('%s.writeByte( %s.booleanValue()?1:0);'%(stream,val))
 			# sw.writeln('RpcBinarySerializer.writeByte(%s?1:0,%s);'%(val,stream))
-			sw.writeln('RpcBinarySerializer.writeBool(%s);'%(val,stream))
+			sw.writeln('RpcBinarySerializer.writeBool(%s,%s);'%(val,stream))
 		return s
 
 	@staticmethod
@@ -453,6 +454,7 @@ def createCodeStruct(e,sw,idt):
 		else:
 			sw.writeln("%s.marshall(d);"% m.name )
 	sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
+	sw.writeln('RpcCommunicator.instance().logger.error(e.ToString());')
 	sw.writeln('return false;')
 	sw.scope_end() # end catch
 
@@ -538,9 +540,9 @@ def createCodeSequence(e,sw,idt):
 	sw.writeln('public bool marshall(BinaryWriter d){').idt_inc()
 	sw.writeln('try{').idt_inc()
 	# sw.writeln("d.writeInt(this.ds.size());")
-	sw.writeln('RpcBinarySeriliazer.writeInt(this.ds.Length,d);')
+	sw.writeln('RpcBinarySerializer.writeInt(this.ds.Count,d);')
 	# sw.writeln('for(%s item : this.ds){'%e.type.getMappingTypeName(module) ).idt_inc()
-	sw.writeln('foread(%s item in this.ds){'%e.type.getMappingTypeName(module) ).idt_inc()
+	sw.writeln('foreach(%s item in this.ds){'%e.type.getMappingTypeName(module) ).idt_inc()
 
 	if isinstance( e.type,Builtin):
 		Builtin_Python.serial(e.type,'item',sw,'d')
@@ -563,7 +565,7 @@ def createCodeSequence(e,sw,idt):
 
 	sw.scope_end()	#end for
 	sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
-	sw.writeln('RpcCommunicator.install().logger.error(e.ToString());')
+	sw.writeln('RpcCommunicator.instance().logger.error(e.ToString());')
 	sw.writeln('return false;')
 	sw.scope_end()
 
@@ -632,7 +634,7 @@ def createCodeSequence(e,sw,idt):
 
 	sw.wln()
 	sw.scope_end() # end class sequence
-	sw.wln()
+	# sw.wln()
 
 
 def createCodeDictionary(e,sw,idt):
@@ -708,7 +710,7 @@ def createCodeDictionary(e,sw,idt):
 				sw.define_var(c,'%shlp'%e.second.name,'new %shlp(%s.Value)'%(e.second.name,kv) )
 				sw.writeln('%s.marshall(d);'%c)
 		else:
-			sw.writeln("%s.marshall(d);"%v)
+			sw.writeln("%s.Value.marshall(d);"%kv)
 		sw.scope_end() # end for
 
 		sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
@@ -946,6 +948,7 @@ def createProxy(e,sw,ifidx):
 			sw.writeln('%s.paramstream = %s.ToArray();'%(m1,bos))
 		sw.writeln("%s.prx = this;"%m1)
 		sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
+		sw.writeln('RpcCommunicator.instance().logger.error(e.ToString());')
 		sw.writeln('throw new RpcException(RpcException.RPCERROR_DATADIRTY,e.ToString());')
 		sw.scope_end() # end try()
 		# so far 已经完成参数打包,开始数据发送
@@ -957,15 +960,17 @@ def createProxy(e,sw,ifidx):
 		sw.scope_end() # end if()
 
 		#这里进行rpc发送之后等待响应消息到达  BEGIN WAITING
-		sw.writeln('try{').idt_inc()
-
 		rc = sw.newVariant('_rc')
 		sw.define_var(rc,'bool','false')
+		sw.writeln('try{').idt_inc()
 
-		sw.writeln('if( timeout > 0) %s = %s.WaitOne(timeout);'% (rc,m1) )
-		sw.writeln('else %s = %s.WaitOne( RpcCommunicator.instance().getProperty_DefaultCallWaitTime() );'%(rc,m1) )
+
+
+		sw.writeln('if( timeout > 0) %s = %s.ev.WaitOne(timeout);'% (rc,m1) )
+		sw.writeln('else %s = %s.ev.WaitOne( RpcCommunicator.instance().getProperty_DefaultCallWaitTime() );'%(rc,m1) )
 
 		sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
+		sw.writeln('RpcCommunicator.instance().logger.error(e.ToString());')
 		sw.writeln('throw new RpcException(RpcException.RPCERROR_INTERNAL_EXCEPTION,e.ToString());')
 		sw.scope_end()
 		# sw.scope_end() # end synchronized()
@@ -1019,6 +1024,7 @@ def createProxy(e,sw,ifidx):
 				Builtin_Python.unserial(m.type,v,sw,reader)
 
 			sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
+			sw.writeln('RpcCommunicator.instance().logger.error(e.ToString());')
 			sw.writeln('throw new RpcException(RpcException.RPCERROR_DATADIRTY);')
 			sw.scope_end()
 
@@ -1184,7 +1190,7 @@ def createProxy(e,sw,ifidx):
 
 	#---------------定义 异步调用 基类  --------------------
 
-	sw.classfile_enter('%s_AsyncCallBack'%(e.getName()))
+	# sw.classfile_enter('%s_AsyncCallBack'%(e.getName()))
 	sw.wln()
 
 	# sw.writeln('import %s.*;'%sw.pkg_current())
@@ -1230,7 +1236,7 @@ def createProxy(e,sw,ifidx):
 		else:
 			sw.define_var(v,m.type.getMappingTypeName(module),m.type.getTypeDefaultValue(module))
 			if isinstance(m.type,Builtin):
-				Builtin_Python.unserial(m.type,v,sw,'d')
+				Builtin_Python.unserial(m.type,v,sw,'reader')
 			elif isinstance(m.type,Sequence)  or isinstance(m.type,Dictionary):
 	#			sw.define_var(v,m.type.getMappingTypeName(),'new %s()'%p.type.getMappingTypeName())
 				impled = False
@@ -1299,7 +1305,7 @@ def createCodeInterface(e,sw,idt,idx):
 		ifidx = r
 	#--- end
 	e.ifidx = ifidx
-	print 'Interface - Index:',ifidx
+	print 'Interface:%s - Index:%s'%(e.name,ifidx)
 
 	interface_defs[ifidx] = {'e':e,'f':{}}
 
@@ -1334,7 +1340,7 @@ def createCodeInterface(e,sw,idt,idx):
 	#写入对应的delegate 类对象
 	sw.writeln("public %s(){"%e.getName() ).idt_inc()
 	# sw.writeln('super();')
-	sw.writeln('this.delegate = new %s_delegate(this);'%e.getName())
+	sw.writeln('this.delegate_ = new %s_delegate(this);'%e.getName())
 	sw.scope_end().wln() # end construct function
 
 	#定义servant 接口函数
@@ -1348,7 +1354,7 @@ def createCodeInterface(e,sw,idt,idx):
 			list.append('%s %s'%(t,v))
 		s = string.join( list,',')
 		if s: s += ','
-		sw.writeln('public %s %s(%sRpcContext ctx){'%(m.type.getMappingTypeName(module),m.name,s ) ).idt_inc()
+		sw.writeln('public virtual %s %s(%sRpcContext ctx){'%(m.type.getMappingTypeName(module),m.name,s ) ).idt_inc()
 		#------------定义默认返回函数----------------------
 
 		if isinstance( m.type ,Builtin ):
@@ -1471,7 +1477,7 @@ def createCodeInterface(e,sw,idt,idx):
 			sw.writeln("cr = servant.%s(%sctx);"%(m.name,ps) )
 
 
-		sw.writeln("if( (m.calltype & tce.RpcMessage.ONEWAY) !=0 ){").idt_inc()
+		sw.writeln("if( (m.calltype & RpcMessage.ONEWAY) !=0 ){").idt_inc()
 		sw.writeln("return true;") #异步调用不返回等待
 		sw.scope_end()
 
@@ -1485,7 +1491,7 @@ def createCodeInterface(e,sw,idt,idx):
 			sw.writeln('mr.conn = m.conn;')
 			sw.writeln('mr.ifidx = m.ifidx;')
 			sw.writeln('mr.call_id = m.call_id;')
-			sw.writeln('if(m.extra.getProperties().containsKey("__user_id__")){').idt_inc()
+			sw.writeln('if(m.extra.getProperties().ContainsKey("__user_id__")){').idt_inc()
 			sw.writeln('mr.extra.setPropertyValue("__user_id__",m.extra.getPropertyValue("__user_id__"));')
 			sw.scope_end()
 
@@ -1497,8 +1503,9 @@ def createCodeInterface(e,sw,idt,idx):
 			# sw.writeln('ByteArrayOutputStream bos = new ByteArrayOutputStream();')
 			# sw.writeln('DataOutputStream dos = new DataOutputStream(bos);')
 
-			sw.writeln('MemoryStream bos = new MemoryStream();')
-			sw.writeln('BinaryWriter dos = new BinaryWriter(bos);')
+			bos = sw.newVariant('_bos')
+			sw.writeln('MemoryStream %s = new MemoryStream();'%bos)
+			sw.writeln('BinaryWriter dos = new BinaryWriter(%s);'%bos)
 
 			if isinstance( m.type ,Builtin ) and m.type.name!='void':
 				Builtin_Python.serial(m.type,'cr',sw,'dos')
@@ -1517,7 +1524,7 @@ def createCodeInterface(e,sw,idt,idx):
 			else:
 				sw.writeln("cr.marshall(dos);")
 			sw.writeln('mr.paramsize = 1;')
-			sw.writeln('mr.paramstream = bos.ToArray();')
+			sw.writeln('mr.paramstream = %s.ToArray();'%bos)
 			sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
 			sw.writeln('RpcCommunicator.instance().logger.error(e.ToString());')
 			sw.writeln('r = false;')
@@ -1551,18 +1558,18 @@ def createCodeInterfaceMapping():
 def createCodeFrame(module,e,idx,sw ):
 	idt = Indent()
 
-	txt='''
-		using System;
-		using Tce;
-		using System.Collections.Generic;
-		using System.IO;
-		using System.Net;
-
-		namespace %s{;
-	'''%module.name
-
-	sw.setIncludes('default',(txt,))
-	sw.writeIncludes()
+# 	txt='''
+# using System;
+# using Tce;
+# using System.Collections.Generic;
+# using System.IO;
+# using System.Net;
+#
+# namespace %s{
+# 	'''%module.name
+#
+# 	sw.setIncludes('default',(txt,))
+# 	sw.writeIncludes()
 	if isinstance(e,Interface):
 		#sw.classfile_enter(e.getName())
 		createCodeInterface(e,sw,idt,idx)
@@ -1592,7 +1599,7 @@ def createCodeFrame(module,e,idx,sw ):
 		# sw.classfile_leave()
 		return
 
-	sw.scope_end()
+	# sw.scope_end()
 #
 #	createCodeInterfaceMapping() #创建 链接上接收的Rpc消息 根据其ifx编号分派到对应的接口和函数上去
 
@@ -1664,12 +1671,13 @@ def createCodes():
 	unit = syntax_result()
 	print global_modules_defs
 
-	os.chdir( outdir )
+	# print outdir
+	# os.chdir( outdir )
 	for module in global_modules:
 		name = module.name
 		print 'module and refs:',name,module.ref_modules.keys()
 
-
+		print os.path.join(outdir,name+'.cs')
 		f = open(os.path.join(outdir,name+'.cs'),'w')
 		ostream.clearHandler()
 		ostream.addHandler(f)
@@ -1681,17 +1689,40 @@ def createCodes():
 		# sw.createPackage(name)  # package is namespace
 		# sw.pkg_enter(name)
 
+		module_def_start(module,sw)
 		for idx,e in enumerate(module.list):
 			createCodeFrame(module,e,idx,sw)   #开始处理module代码实现
 			ostream.write(NEWLINE)
 
-		sw.pkg_leave()
+		module_def_end(module,sw)
+
+		# sw.pkg_leave()
+
+def module_def_start(module,sw):
+	txt='''
+using System;
+using Tce;
+using System.Collections.Generic;
+using System.IO;
+using System.Net;
+
+namespace %s{
+	'''%module.name
+
+	sw.setIncludes('default',(txt,))
+	sw.writeIncludes()
+
+def module_def_end(module,sw):
+	sw.scope_end()
+
+
+
 
 lexparser.language = 'csharp'
 lexparser.lang_kws = ['for','foreach' 'using', 'namespace','float',
 					  'new', 'class', 'interface', 'public','protected','private','struct','yield',
 					  'while', 'do', 'package', 'sealed','abstract','virtual','override',
-					  'as','object','using','namesapce',]
+					  'as','object','namespace','throw',]
 lexparser.codecls = LanguageCSharp
 
 """
