@@ -218,6 +218,10 @@ class StreamWriter:
 	def scope_end(self):
 		return self.idt_dec().newline().brace2().wln()
 
+	def function_end(self):
+		pass
+
+
 	def define_var(self,name,type,val=None):
 		txt ="%s %s"%(type,name)
 		if val:
@@ -942,37 +946,45 @@ def createProxy(e,sw,ifidx):
 			sw.writeln('%s.paramstream = %s.ToArray();'%(m1,bos))
 		sw.writeln("%s.prx = this;"%m1)
 		sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
-		sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_DATADIRTY,e.ToString());')
+		sw.writeln('throw new RpcException(RpcException.RPCERROR_DATADIRTY,e.ToString());')
 		sw.scope_end() # end try()
 		# so far 已经完成参数打包,开始数据发送
 
 		# sw.writeln('synchronized(%s){'%m1).idt_inc()
 		sw.writeln("%s = this.conn.sendMessage(%s);"%(r,m1))
 		sw.writeln("if(!%s){"%r).idt_inc()
-		sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_SENDFAILED);')
+		sw.writeln('throw new RpcException(RpcException.RPCERROR_SENDFAILED);')
 		sw.scope_end() # end if()
 
 		#这里进行rpc发送之后等待响应消息到达  BEGIN WAITING
 		sw.writeln('try{').idt_inc()
 
-		sw.writeln('if( timeout > 0) %s.WaitOne(timeout);'%m1)
-		sw.writeln('else %s.WaitOne( RpcCommunicator.instance().getProperty_DefaultCallWaitTime() );'%m1)
+		rc = sw.newVariant('_rc')
+		sw.define_var(rc,'bool','false')
+
+		sw.writeln('if( timeout > 0) %s = %s.WaitOne(timeout);'% (rc,m1) )
+		sw.writeln('else %s = %s.WaitOne( RpcCommunicator.instance().getProperty_DefaultCallWaitTime() );'%(rc,m1) )
 
 		sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
-		sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_INTERNAL_EXCEPTION,e.ToString());')
+		sw.writeln('throw new RpcException(RpcException.RPCERROR_INTERNAL_EXCEPTION,e.ToString());')
 		sw.scope_end()
 		# sw.scope_end() # end synchronized()
 
+		# 检测是否调用超时
+		sw.writeln('if( %s == false){'%rc).idt_inc()
+		sw.writeln('throw new RpcException(RpcException.RPCERROR_TIMEOUT);')
+		sw.scope_end()
+
 		#检测错误码
-		sw.writeln('if (%s.errcode != RpcConstValue.RPCERROR_SUCC){'%m1).idt_inc()
+		sw.writeln('if (%s.errcode != RpcException.RPCERROR_SUCC){'%m1).idt_inc()
 		sw.writeln('throw new RpcException(%s.errcode);'%m1)
 		sw.scope_end()
 
 		sw.writeln('if( %s.result == null){'%m1).idt_inc() #网络断开
-		sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_TIMEOUT);') #超时
+		sw.writeln('throw new RpcException(RpcException.RPCERROR_TIMEOUT,"response is null");') #超时
 		sw.scope_end()
 
-		if m.type.name !='void':
+		if m.type.name !='void':#开始处理返回值的序列化
 		# if True:
 			v = sw.newVariant('b')
 			sw.define_var(v,m.type.getMappingTypeName(module),m.type.getTypeDefaultValue(module) )
@@ -980,30 +992,34 @@ def createProxy(e,sw,ifidx):
 			m2 = sw.newVariant('m2')
 			sw.writeln('RpcMessage %s = (RpcMessage) %s.result;'%(m2,m1))
 			d = sw.newVariant('d')
-			sw.writeln('ByteBuffer %s = ByteBuffer.wrap(%s.paramstream);'%(d,m2))
-			#		sw.writeln('try{').idt_inc()
-
+			# sw.writeln('ByteBuffer %s = ByteBuffer.wrap(%s.paramstream);'%(d,m2))
+			sw.writeln('MemoryStream %s = new MemoryStream(%s.paramstream);'%(d,m2))
+			reader = sw.newVariant('_reader')
+			sw.writeln('BinaryReader %s = new BinaryReader(%s);'%(reader,d))
 			#返回值必须是 sequence 或者 struct
 			if  isinstance(m.type,Sequence) or isinstance(m.type,Dictionary):
 				impled = False
 				if isinstance(m.type,Sequence):
 					if m.type.type.name == 'byte':
-						size = sw.newVariant('_s')
-						sw.writeln('int %s = %s.getInt();'%(size,d))
-						sw.writeln('%s = new byte[%s];'%(v,size))
-						sw.writeln('%s.get(%s);'%(d,v))
+						#size = sw.newVariant('_s')
+						# sw.writeln('int %s = %s.getInt();'%(size,d))
+						# sw.writeln('%s = new byte[%s];'%(v,size))
+						# sw.writeln('%s.get(%s);'%(d,v))
+						sw.writeln('%s = RpcBinarySerializer.readBytes(%s);'%(v,reader))
+
 						impled = True
 
 				if not impled:
 					c = sw.newVariant('ar')
 					sw.define_var(c,'%shlp'%m.type.name,'new %shlp(%s)'%(m.type.name,v))
-					sw.writeln('%s = %s.unmarshall(%s);'%(r,c,d))
+					sw.writeln('%s = %s.unmarshall(%s);'%(r,c,reader))
 			elif isinstance(m.type,Struct):
-				sw.writeln('%s = %s.unmarshall(%s);'%(r,v,d))
+				sw.writeln('%s = %s.unmarshall(%s);'%(r,v,reader))
 			else:
-				Builtin_Python.unserial(m.type,v,sw,d)
+				Builtin_Python.unserial(m.type,v,sw,reader)
+
 			sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
-			sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_DATADIRTY);')
+			sw.writeln('throw new RpcException(RpcException.RPCERROR_DATADIRTY);')
 			sw.scope_end()
 
 			sw.writeln('return %s; //regardless if  unmarshalling is okay '%v)
@@ -1026,9 +1042,10 @@ def createProxy(e,sw,ifidx):
 			# 函数定义开始
 			if s: s = s+','
 
-			sw.writeln('public %s %s_oneway(%sHashMap<String,String> props) throws RpcException{'%(m.type.name,m.name,s) ).idt_inc()
+			# sw.writeln('public %s %s_oneway(%sHashMap<String,String> props) throws RpcException{'%(m.type.name,m.name,s) ).idt_inc()
+			sw.writeln('public %s %s_oneway(%sDictionary<string,string> props){'%(m.type.name,m.name,s) ).idt_inc()
 			r = sw.newVariant('r')
-			sw.define_var(r,'boolean','false')
+			sw.define_var(r,'bool','false')
 			m1 = sw.newVariant('m')
 			sw.define_var(m1,'RpcMessage','new RpcMessage(RpcMessage.CALL|RpcMessage.ONEWAY)')
 			sw.writeln("%s.ifidx = %s;"%(m1,ifidx))
@@ -1039,9 +1056,11 @@ def createProxy(e,sw,ifidx):
 			sw.writeln('try{').idt_inc()
 			if len(m.params):
 				bos = sw.newVariant('bos')
-				sw.writeln('ByteArrayOutputStream %s = new ByteArrayOutputStream();'%bos)
+				# sw.writeln('ByteArrayOutputStream %s = new ByteArrayOutputStream();'%bos)
+				sw.writeln('MemoryStream %s = new MemoryStream();'%bos)
 				dos = sw.newVariant('dos')
-				sw.writeln('DataOutputStream %s = new DataOutputStream(%s);'%(dos,bos))
+				# sw.writeln('DataOutputStream %s = new DataOutputStream(%s);'%(dos,bos))
+				sw.writeln('BinaryWriter %s = new BinaryWriter(%s);'%(dos,bos))
 
 			for p in m.params:
 				if isinstance(p.type,Builtin):
@@ -1049,8 +1068,9 @@ def createProxy(e,sw,ifidx):
 				elif isinstance(p.type,Sequence): # or isinstance(p.type,Dictionary):
 					impled = False
 					if p.type.type.name == 'byte':
-						sw.writeln('%s.writeInt(%s.length);'%(dos,p.id))
-						sw.writeln('%s.write(%s,0,%s.length);'%(dos,p.id,p.id))
+						# sw.writeln('%s.writeInt(%s.length);'%(dos,p.id))
+						# sw.writeln('%s.write(%s,0,%s.length);'%(dos,p.id,p.id))
+						sw.writeln('RpcBinarySerializer.writeBytes(%s,%s);'%(p.id,dos))
 						impled = True
 					if not impled:
 						v = sw.newVariant('c')
@@ -1059,22 +1079,22 @@ def createProxy(e,sw,ifidx):
 				else:
 					sw.writeln("%s.marshall(%s);"%(p.id,dos))
 			if len(m.params):
-				sw.writeln('%s.paramstream = %s.toByteArray();'%(m1,bos))
+				sw.writeln('%s.paramstream = %s.ToArray();'%(m1,bos))
 			sw.writeln("%s.prx = this;"%m1)
 			sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
-			sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_DATADIRTY,e.toString());')
+			sw.writeln('throw new RpcException(RpcException.RPCERROR_DATADIRTY,e.ToString());')
 			sw.scope_end() # end try()
 
 			sw.writeln("%s = this.conn.sendMessage(%s);"%(r,m1))
 			sw.writeln("if(!%s){"%r).idt_inc()
-			sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_SENDFAILED);')
+			sw.writeln('throw new RpcException(RpcException.RPCERROR_SENDFAILED);')
 			sw.scope_end() # end if()
 			sw.scope_end() # end function()
-			#end rpc proxy::call()  --
 
 			sw.wln()
 
 		#---------- END ONEWAY CALL ------------------------------------------
+
 		#---------- BEGIN ASYNC CALL ------------------------------------------
 		#-----------  void return not be supported -----------------------------------------
 		#if m.type.name !='void':
@@ -1093,20 +1113,20 @@ def createProxy(e,sw,ifidx):
 			vs = string.join( list,',')
 			if vs: vs = vs +','
 
-			sw.writeln('public void %s_async(%s%s_AsyncCallBack async,HashMap<String,String> props) throws RpcException{'%(m.name,s,e.name) ).idt_inc()
+			sw.writeln('public void %s_async(%s%s_AsyncCallBack async,Dictionary<string,string> props){'%(m.name,s,e.name) ).idt_inc()
 			sw.writeln('%s_async(%sasync,props,null);'%(m.name,vs) )
 			sw.scope_end() # end function()
 			sw.wln()
 
-			sw.writeln('public void %s_async(%s%s_AsyncCallBack async) throws RpcException{'%(m.name,s,e.name) ).idt_inc()
+			sw.writeln('public void %s_async(%s%s_AsyncCallBack async){'%(m.name,s,e.name) ).idt_inc()
 			sw.writeln('%s_async(%sasync,null,null);'%(m.name,vs) )
 			sw.scope_end() # end function()
 			sw.wln()
 
 
-			sw.writeln('public void %s_async(%s%s_AsyncCallBack async,HashMap<String,String> props,Object cookie) throws RpcException{'%(m.name,s,e.name) ).idt_inc()
+			sw.writeln('public void %s_async(%s%s_AsyncCallBack async,Dictionary<string,string> props,object cookie){'%(m.name,s,e.name) ).idt_inc()
 			r = sw.newVariant('r')
-			sw.define_var(r,'boolean','false')
+			sw.define_var(r,'bool','false')
 			m1 = sw.newVariant('m')
 			sw.define_var(m1,'RpcMessage','new RpcMessage(RpcMessage.CALL|RpcMessage.ASYNC)')
 			sw.writeln("%s.ifidx = %s;"%(m1,ifidx))
@@ -1118,8 +1138,10 @@ def createProxy(e,sw,ifidx):
 			if len(m.params):
 				bos = sw.newVariant('bos')
 				dos = sw.newVariant('dos')
-				sw.writeln('ByteArrayOutputStream %s = new ByteArrayOutputStream();'%bos)
-				sw.writeln('DataOutputStream %s = new DataOutputStream(%s);'%(dos,bos))
+				# sw.writeln('ByteArrayOutputStream %s = new ByteArrayOutputStream();'%bos)
+				# sw.writeln('DataOutputStream %s = new DataOutputStream(%s);'%(dos,bos))
+				sw.writeln('MemoryStream %s = new MemoryStream();'%(bos,))
+				sw.writeln('BinaryWriter %s = new BinaryWriter(%s);'%(dos,bos))
 
 			for p in m.params:
 				if isinstance(p.type,Builtin):
@@ -1128,8 +1150,9 @@ def createProxy(e,sw,ifidx):
 					impled = False
 					if isinstance(p.type,Sequence):
 						if p.type.type.name == 'byte':
-							sw.writeln('%s.writeInt(%s.length);'%(dos,p.id))
-							sw.writeln('%s.write(%s,0,%s.length);'%(dos,p.id,p.id))
+							# sw.writeln('%s.writeInt(%s.length);'%(dos,p.id))
+							# sw.writeln('%s.write(%s,0,%s.length);'%(dos,p.id,p.id))
+							sw.writeln('RpcBinarySerializer.writeBytes(%s,%s)'%(p.id,dos))
 							impled = True
 					if not impled:
 						v = sw.newVariant('c')
@@ -1138,60 +1161,61 @@ def createProxy(e,sw,ifidx):
 				else:
 					sw.writeln("%s.marshall(%s);"%(p.id,dos))
 			if m.params:
-				sw.writeln('%s.paramstream = %s.toByteArray();'%(m1,bos))
+				sw.writeln('%s.paramstream = %s.ToArray();'%(m1,bos))
 			sw.writeln("%s.prx = this;"%m1)
 			sw.writeln('%s.async = async;'%m1)
 			sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
-			sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_DATADIRTY,e.toString());')
+			sw.writeln('throw new RpcException(RpcException.RPCERROR_DATADIRTY,e.ToString());')
 			sw.scope_end() # end try()
 
-			sw.writeln("%s = this.conn.sendMessage(%s);"%(r,m1))
+			sw.writeln("%s = this.conn.sendMessage(%s);"%(r,m1)) # 发送异步rpc调用请求
 			sw.writeln("if(!%s){"%r).idt_inc()
-			sw.writeln('throw new RpcException(RpcConstValue.RPCERROR_SENDFAILED);')
+			sw.writeln('throw new RpcException(RpcException.RPCERROR_SENDFAILED);')
 			sw.scope_end() # end if()
 			sw.scope_end() # end function()
-			#end rpc proxy::call()  --
 
 			sw.wln()
 
 		#---------- END ASYNC CALL ------------------------------------------
 		sw.wln()
 	sw.scope_end() # end class PROXY class END --  '}'
-	sw.classfile_leave()
+
+	# sw.classfile_leave()
 
 	#---------------定义 异步调用 基类  --------------------
 
 	sw.classfile_enter('%s_AsyncCallBack'%(e.getName()))
 	sw.wln()
 
-	sw.writeln('import %s.*;'%sw.pkg_current())
-	for ref in module.ref_modules.keys():
-		if sw.pkg_current()!=ref:
-			sw.writeln('import %s;'%ref)
-	sw.writeln('import tce.*;')
-#	sw.writeln('import java.io.*;')
-
-	sw.writeln('import java.nio.*;')
-	sw.writeln('import java.util.*;')
+	# sw.writeln('import %s.*;'%sw.pkg_current())
+	# for ref in module.ref_modules.keys():
+	# 	if sw.pkg_current()!=ref:
+	# 		sw.writeln('import %s;'%ref)
+	# sw.writeln('import tce.*;')
+	# sw.writeln('import java.nio.*;')
+	# sw.writeln('import java.util.*;')
 	sw.wln()
 
-	sw.writeln('public class %s_AsyncCallBack extends RpcAsyncCallBackBase{'%(e.getName() )).idt_inc()
+	sw.writeln('public class %s_AsyncCallBack: RpcAsyncCallBackBase{'%(e.getName() )).idt_inc()
 	#定义异步回调接收函数
 
-	sw.writeln('// following functions should be ovrrided in user code.')
+	sw.writeln('// following functions should be overrided in user code.')
 	for m in e.list: # func
 		# if m.type.name =='void': continue
 		if m.type.name == 'void':   # void 类型也接受异步回调
-			sw.writeln('public void %s(RpcProxyBase proxy,Object cookie){'%(m.name)).idt_inc()
+			sw.writeln('public void %s(RpcProxyBase proxy,object cookie){'%(m.name)).idt_inc()
 		else:
-			sw.writeln('public void %s(%s result,RpcProxyBase proxy,Object cookie){'%(m.name,m.type.getMappingTypeName(module))).idt_inc()
+			sw.writeln('public void %s(%s result,RpcProxyBase proxy,object cookie){'%(m.name,m.type.getMappingTypeName(module))).idt_inc()
 		sw.scope_end()
 		sw.wln()
 
-	sw.writeln('@Override')
-	sw.writeln('public void callReturn(RpcMessage m1,RpcMessage m2){').idt_inc()
-	sw.writeln('boolean r = false;')
-	sw.writeln('ByteBuffer d = ByteBuffer.wrap(m2.paramstream);')
+	# sw.writeln('@Override')
+	sw.writeln('public override void callReturn(RpcMessage m1,RpcMessage m2){').idt_inc()
+	sw.writeln('bool r = false;')
+	# sw.writeln('ByteBuffer d = ByteBuffer.wrap(m2.paramstream);')
+
+	sw.writeln('MemoryStream d = new MemoryStream(m2.paramstream);')
+	sw.writeln('BinaryReader reader = new BinaryReader(d);')
 
 	for opidx,m in enumerate(e.list):
 		#if m.type.name == 'void':
@@ -1200,7 +1224,7 @@ def createProxy(e,sw,ifidx):
 		#	continue
 
 		v = sw.newVariant('b')
-		sw.writeln('if(m1.opidx == %s){'%opidx).idt_inc()
+		sw.writeln('if( m1.opidx == %s ){'%opidx).idt_inc()
 		if m.type.name =='void':
 			sw.writeln('%s(%s,%s);'%(m.name,'m1.prx','m1.cookie'))
 		else:
@@ -1212,21 +1236,24 @@ def createProxy(e,sw,ifidx):
 				impled = False
 				if isinstance(m.type,Sequence):
 					if m.type.type.name == 'byte':
-						size = sw.newVariant('_s')
-						sw.writeln('int %s = %s.getInt();'%(size,'d'))
-						sw.writeln('%s = new byte[%s];'%(v,size))
-						sw.writeln('%s.get(%s);'%('d',v))
+						# size = sw.newVariant('_s')
+						# sw.writeln('int %s = %s.getInt();'%(size,'d'))
+						# sw.writeln('%s = new byte[%s];'%(v,size))
+						# sw.writeln('%s.get(%s);'%('d',v))
+						sw.writeln('%s = RpcBinarySerializer.readBytes(reader);'%v)
 						impled = True
 
 				if not impled:
 					c = sw.newVariant('c')
 					sw.define_var(c,'%shlp'%m.type.name,'new %shlp(%s)'%(m.type.name,v))
-					sw.writeln('r = %s.unmarshall(d);'%c)
+					sw.writeln('r = %s.unmarshall(reader);'%c)
 		#			sw.writeln('%s(%s,%s);'%(m.name,v,'m1.prx')) # 不考虑unmarshall()是否okay
 
 			else:
 	#			sw.define_var(v,m.type.getMappingTypeName(),'new %s()'%m.type.getMappingTypeName())
-				sw.writeln('r = %s.unmarshall(d);'%v)
+				sw.writeln('r = %s.unmarshall(reader);'%v)
+
+			#调用 异步接口的接收函数，将rpc返回值传入
 			sw.writeln('%s(%s,%s,%s);'%(m.name,v,'m1.prx','m1.cookie')) #不考虑unmarshall是否okay
 		sw.scope_end()
 		#		sw.scope_end()
@@ -1234,7 +1261,7 @@ def createProxy(e,sw,ifidx):
 	sw.scope_end() # end funcion callReturn()
 
 	sw.scope_end() # end class  '}'
-	sw.classfile_leave()
+	# sw.classfile_leave()
 
 
 '''
@@ -1263,7 +1290,7 @@ def createCodeInterface(e,sw,idt,idx):
 
 	module = e.container    # module is interface's container
 
-		#-------- index of if-cls from extern setting in file
+	#-------- index of if-cls from extern setting in file
 	import tce_util
 	ifname = "%s.%s"%(module.name,e.name)
 	r = tce_util.getInterfaceIndexWithName(ifname)
@@ -1272,38 +1299,41 @@ def createCodeInterface(e,sw,idt,idx):
 		ifidx = r
 	#--- end
 	e.ifidx = ifidx
-	print 'if-index:',ifidx
+	print 'Interface - Index:',ifidx
 
 	interface_defs[ifidx] = {'e':e,'f':{}}
 
 	createProxy(e,sw,ifidx)
 	# if not e.delegate_exposed: #是否暴露委托对象,如果需要本地接收远程RPC请求则需要定义filter
 	# 	return
+
+	# 决定编译输出是否包含 接口委托实现代码
 	expose = tce_util.isExposeDelegateOfInterfaceWithName(ifname)
 	if not expose:
 		return
 	# begin servant ----
-	sw.classfile_enter(e.getName())
-	sw.writeln('import tce.*;')
 
-	#接口对象的委托类
-	sw.writeln('import %s.%s_delegate;'%(sw.pkg_current(),e.getName()) )
-	sw.writeln('import %s.*;'%(sw.pkg_current()) )
-	sw.writeln('import java.util.*;')
-	for ref in module.ref_modules.keys():
-		if sw.pkg_current()!=ref:
-			sw.writeln('import %s;'%ref)
+	# sw.classfile_enter(e.getName())
+
+	# sw.writeln('import tce.*;')
+	# #接口对象的委托类
+	# sw.writeln('import %s.%s_delegate;'%(sw.pkg_current(),e.getName()) )
+	# sw.writeln('import %s.*;'%(sw.pkg_current()) )
+	# sw.writeln('import java.util.*;')
+	# for ref in module.ref_modules.keys():
+	# 	if sw.pkg_current()!=ref:
+	# 		sw.writeln('import %s;'%ref)
 
 	sw.wln()
 
-	sw.writeln('public class %s extends RpcServant{'%e.getName() )
+	sw.writeln('public class %s : RpcServant{'%e.getName() )
 	sw.idt_inc()
 	sw.writeln("//# -- INTERFACE -- ")
 #	sw.writeln('var delegatecls:Class = %s_delegate'%e.getName())
 #	sw.writeln('public %s_delegate delegate = null;'%e.getName() )
 	#写入对应的delegate 类对象
 	sw.writeln("public %s(){"%e.getName() ).idt_inc()
-	sw.writeln('super();')
+	# sw.writeln('super();')
 	sw.writeln('this.delegate = new %s_delegate(this);'%e.getName())
 	sw.scope_end().wln() # end construct function
 
@@ -1323,7 +1353,6 @@ def createCodeInterface(e,sw,idt,idx):
 
 		if isinstance( m.type ,Builtin ):
 			if m.type.name =='void':
-#				sw.idt_dec().wln()
 				sw.scope_end()
 				continue
 			else:
@@ -1337,26 +1366,27 @@ def createCodeInterface(e,sw,idt,idx):
 		sw.scope_end()
 
 	sw.scope_end() # end class
-	sw.classfile_leave()
+
+	# sw.classfile_leave()
 #	sw.pkg_end()
 	# end -servant -----
 
 	#begin delegate() ----
 
 	#------- 定义委托对象 ---------------------------
-	sw.classfile_enter("%s_delegate"%e.getName())
+	# sw.classfile_enter("%s_delegate"%e.getName())
 
 
-	sw.writeln('import tce.*;')
-	sw.writeln('import java.io.*;')
-	sw.writeln('import java.nio.*;')
-	sw.writeln('import java.util.*;')
-
-	sw.writeln("import %s.%s;"%(sw.pkg_current(),e.getName()))
+	# sw.writeln('import tce.*;')
+	# sw.writeln('import java.io.*;')
+	# sw.writeln('import java.nio.*;')
+	# sw.writeln('import java.util.*;')
+	#
+	# sw.writeln("import %s.%s;"%(sw.pkg_current(),e.getName()))
 	sw.wln()
 	#服务对象调用委托
 
-	sw.writeln("public class %s_delegate extends RpcServantDelegate {"%e.getName()).idt_inc()
+	sw.writeln("public class %s_delegate : RpcServantDelegate {"%e.getName()).idt_inc()
 	sw.wln()
 
 	sw.writeln('%s inst = null;'%(e.getName()))
@@ -1376,8 +1406,8 @@ def createCodeInterface(e,sw,idt,idx):
 	sw.scope_end().wln() # finish construct()
 
 	#实现invoke()接口
-	sw.writeln("@Override")
-	sw.writeln("public boolean invoke(RpcMessage m){").idt_inc()
+	# sw.writeln("@Override")
+	sw.writeln("public override bool invoke(RpcMessage m){").idt_inc()
 #	sw.writeln('boolean r=false;')
 #	sw.writeln('RpcMessageXML m = (RpcMessageXML)m_;')
 	for opidx,m in enumerate(e.list):
@@ -1391,36 +1421,40 @@ def createCodeInterface(e,sw,idt,idx):
 	#开始委托 函数定义
 	for opidx,m in enumerate(e.list): # function list
 		sw.writeln('// func: %s'%m.name)
-		sw.writeln('boolean func_%s_delegate(RpcMessage m){'%(opidx) ).idt_inc()
+		sw.writeln('bool func_%s_delegate(RpcMessage m){'%(opidx) ).idt_inc()
 		params=[ ]
-		sw.writeln('boolean r= false;')
-		sw.writeln('r = false;')
+		sw.writeln('bool r = false;')
+		# sw.writeln('r = false;')
 		if m.params:
-			sw.writeln('ByteBuffer d = ByteBuffer.wrap(m.paramstream);')
+			# sw.writeln('ByteBuffer d = ByteBuffer.wrap(m.paramstream);')
+			sw.writeln('MemoryStream bos = new MemoryStream(m.paramstream);')
+			sw.writeln('BinaryReader reader = new BinaryReader(bos);')
+
 		for p in m.params:
 			if isinstance(p.type,Builtin):
 				sw.define_var(p.id,p.type.getMappingTypeName(module))
-				Builtin_Python.unserial(p.type,p.id,sw,'d')
+				Builtin_Python.unserial(p.type,p.id,sw,'reader')
 			elif isinstance(p.type,Sequence)  or isinstance(p.type,Dictionary):
 				impled = False
 				#print p.type,p.type.type.name
 				if isinstance(p.type,Sequence):
 					if p.type.type.name == 'byte':
-						size = sw.newVariant('_s')
-						sw.writeln('int %s = %s.getInt();'%(size,'d'))
-						sw.writeln('byte[] %s = new byte[%s];'%(p.id,size))
-						sw.writeln('%s.get(%s);'%('d',p.id))
+						# size = sw.newVariant('_s')
+						# sw.writeln('int %s = %s.getInt();'%(size,'d'))
+						# sw.writeln('byte[] %s = new byte[%s];'%(p.id,size))
+						# sw.writeln('%s.get(%s);'%('d',p.id))
+						sw.writeln('%s = RpcBinarySerializer.readBytes(reader);'%p.id )
 						impled = True
 
 				if not impled:
 					sw.define_var(p.id,p.type.getMappingTypeName(module),'new %s()'%p.type.getMappingTypeName(module))
-					c = sw.newVariant('_array')
+					c = sw.newVariant('_c')
 					sw.define_var(c,'%shlp'%p.type.name,'new %shlp(%s)'%(p.type.name,p.id))
-					sw.writeln('%s.unmarshall(d);'%c)
+					sw.writeln('%s.unmarshall(reader);'%c)
 
 			else:
 				sw.define_var(p.id,p.type.getMappingTypeName(module),'new %s()'%p.type.getMappingTypeName(module))
-				sw.writeln('%s.unmarshall(d);'%p.id)
+				sw.writeln('%s.unmarshall( reader );'%p.id)
 
 			params.append(p.id)
 		#params = map( lambda x: '_p_'+x,params)
@@ -1460,17 +1494,21 @@ def createCodeInterface(e,sw,idt,idx):
 	#		sw.writeln("m.sequence = ctx.msg.sequence;") #返回事务号与请求事务号必须一致
 	#
 			sw.writeln('try{').idt_inc()
-			sw.writeln('ByteArrayOutputStream bos = new ByteArrayOutputStream();')
-			sw.writeln('DataOutputStream dos = new DataOutputStream(bos);')
-#			sw.writeln('String xml="";')
+			# sw.writeln('ByteArrayOutputStream bos = new ByteArrayOutputStream();')
+			# sw.writeln('DataOutputStream dos = new DataOutputStream(bos);')
+
+			sw.writeln('MemoryStream bos = new MemoryStream();')
+			sw.writeln('BinaryWriter dos = new BinaryWriter(bos);')
+
 			if isinstance( m.type ,Builtin ) and m.type.name!='void':
 				Builtin_Python.serial(m.type,'cr',sw,'dos')
 			elif isinstance(m.type,Sequence) or isinstance(m.type,Dictionary):
 				impled = False
 				if isinstance(m.type,Sequence):
 					if m.type.type.name == 'byte':
-						sw.writeln('%s.writeInt(%s.length);'%('dos','cr'))
-						sw.writeln('%s.write(%s,0,%s.length);'%('dos','cr','cr'))
+						# sw.writeln('%s.writeInt(%s.length);'%('dos','cr'))
+						# sw.writeln('%s.write(%s,0,%s.length);'%('dos','cr','cr'))
+						sw.writeln('RpcBinarySerializer.writeBytes(%s,%s);'%('cr','dos'))
 						impled = True
 				if not impled:
 					v = sw.newVariant('_c')
@@ -1479,8 +1517,9 @@ def createCodeInterface(e,sw,idt,idx):
 			else:
 				sw.writeln("cr.marshall(dos);")
 			sw.writeln('mr.paramsize = 1;')
-			sw.writeln('mr.paramstream = bos.toByteArray();')
+			sw.writeln('mr.paramstream = bos.ToArray();')
 			sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
+			sw.writeln('RpcCommunicator.instance().logger.error(e.ToString());')
 			sw.writeln('r = false;')
 			sw.writeln('return r;')
 			sw.scope_end()
@@ -1491,11 +1530,10 @@ def createCodeInterface(e,sw,idt,idx):
 		sw.scope_end() # end servant function{}
 		sw.wln()
 	sw.scope_end() # end class define
-	sw.classfile_leave()
+
+	# sw.classfile_leave()
 #	sw.pkg_end()
 	# end delegate()
-
-
 
 
 #	createProxy(e,sw,ifidx)
@@ -1535,23 +1573,23 @@ def createCodeFrame(module,e,idx,sw ):
 	if isinstance(e,Sequence):
 		if e.type.name == 'byte':
 			return
-		sw.classfile_enter(e.getName(),'%shlp'%e.getName() )
+		# sw.classfile_enter(e.getName(),'%shlp'%e.getName() )
 		createCodeSequence(e,sw,idt)
-		sw.classfile_leave()
+		# sw.classfile_leave()
 
 #		pass
 #
 	if isinstance(e,Dictionary):
-		sw.classfile_enter(e.getName(),'%shlp'%e.getName())
+		# sw.classfile_enter(e.getName(),'%shlp'%e.getName())
 		createCodeDictionary(e,sw,idt)
-		sw.classfile_leave()
+		# sw.classfile_leave()
 		pass
 
 
 	if isinstance(e,Struct):
-		sw.classfile_enter(e.getName())
+		# sw.classfile_enter(e.getName())
 		createCodeStruct(e,sw,idt)
-		sw.classfile_leave()
+		# sw.classfile_leave()
 		return
 
 	sw.scope_end()

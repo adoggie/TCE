@@ -111,6 +111,11 @@ def filterInterface(unit,iflist,ifcnt):
 ifidx_list = None
 
 def getInterfaceIndexWithName(name):
+	"""
+	未定义接口名称的序号则返回 -1
+	:param name:
+	:return:
+	"""
 	import os,os.path,string
 	global  ifidx_list
 	if ifidx_list == None:

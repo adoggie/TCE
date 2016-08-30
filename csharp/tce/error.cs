@@ -2,6 +2,7 @@
 
 namespace Tce {
 
+/*
     class RpcError{
         public const int RPCERROR_SUCC = 0;
         public const int RPCERROR_SENDFAILED = 1;
@@ -37,5 +38,7 @@ namespace Tce {
             return str;
         }
     }
+    */
+
 
 }
