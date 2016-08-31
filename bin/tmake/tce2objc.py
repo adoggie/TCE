@@ -12,7 +12,7 @@ import string
 
 import lexparser
 from lexparser import *
-from mylex import syntax_result
+from mylex import syntax_result,parse_idlfile
 
 H_FILE = 0
 MM_FILE = 1
@@ -1409,12 +1409,14 @@ def createCodes():
 	# 	pkgname = name
 #	print pkgname
 	print file
-	idl_file = file
-	lexparser.curr_idl_path = os.path.dirname(idl_file)
+	idlfiles = file.strip().split(',')
+	for file in idlfiles:
+		lexparser.curr_idl_path = os.path.dirname(file)
+		parse_idlfile(file)
 
 
 #	ostream.write(headtitles)
-	unit = syntax_result(content)
+	unit = syntax_result()
 	print global_modules_defs
 
 
@@ -1439,25 +1441,98 @@ def createCodes():
 
 
 
+class LanguageObjc(object):
+	language = 'csharp'
+	class Builtin:
+		@classmethod
+		def defaultValue(cls,this):
+			r = '@""'    #  as 'string'
+			if this.type in ('byte','short','int','long','float','double'):
+				r = '0'
+			elif this.type == 'bool':
+				r = 'false'
+			return r
+
+		@classmethod
+		def typeName(cls,this):
+			type = this.type
+			r = 'NSNumber*'
+			if type in ('byte',) : #'bool'):
+				r ='uint8_t'
+			if type in ('bool',):
+				r = 'bool'
+			if type in ('short',):
+				r ='int16_t'
+			if type in ('int',):
+				r = 'int32_t'
+			elif type in ('float',):
+				r = type
+			elif type in ('long',):
+				r = type
+			elif type in ('double',):
+				r = type
+			elif type in ('string'):
+				r = "NSString *"
+			elif type in ('void'):
+				r ='void'
+			return r
+
+	class Sequence:
+		@classmethod
+		def defaultValue(cls,this,call_module):
+			if this.type.name == 'byte':
+				return '[NSData new]'
+			return '[NSMutableArray new]'
+
+		@classmethod
+		def typeName(cls,this,call_module):
+			r = 'NSMutableArray*'
+			if this.type.name == 'byte':
+				r = 'NSData*'
+			return r
+
+
+	class Dictionary:
+		@classmethod
+		def defaultValue(cls,this,call_module):
+			return '[NSMutableDictionary new]'
+
+
+		@classmethod
+		def typeName(cls,this,call_module):
+			r = 'NSMutableDictionary*'
+			return r
+
+
+	class Struct:
+		@classmethod
+		def defaultValue(cls,this,call_module):
+			return '[%s new]'%this.getTypeName(call_module).replace('*','')
+
+		@classmethod
+		def typeName(cls,this,call_module):
+			return '%s *'%this.name
+
+
+	class Module:
+		def __init__(self,m):
+			self.m = m
+
+
+
 lexparser.language = 'objc'
 lexparser.lang_kws = ['for', 'import', 'float', 'new', 'class', 'interface', 'extends', 'while', 'do', 'package', 'timeout', 'props']
 
 
-
+lexparser.codecls = LanguageObjc
 
 if __name__ =='__main__':
 	createCodes()
 
+"""
+usage:
+	tce2objc.py -i service.idl,.. -o output_dir
 
-# usage:
-# 	tce2java_xml.py
-# 			-i /Users/socketref/Desktop/projects/dvr/ply/code/java/test/sns_mobile_xml.idl
-# 				-o /Users/socketref/Desktop/projects/dvr/ply/code/java
-
-
-#	a=[10,20]
-#	t = TA(a)
-#	t.test()
-#	print a
+"""
 
 

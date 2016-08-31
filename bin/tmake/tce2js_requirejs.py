@@ -14,6 +14,10 @@
 """
 2015.11.9 scott
   1. 支持 requirejs
+
+2016.8.31 scott
+1. filterring index of interface and function
+
 """
 
 import os
@@ -23,6 +27,7 @@ import string
 import lexparser
 from lexparser import *
 from mylex import syntax_result,parse_idlfile
+import tce_util
 
 interface_idx = [ ]
 
@@ -1060,24 +1065,18 @@ fileifx = open('ifxdef.txt','w') #接口表文件
 
 def createCodeInterface(e,sw,idt,idx):
 	global  interface_defs,ifcnt
-#	ifidx = ifcnt
-#	ifcnt+=1
+
 	print '..createCodeInterface():',e.name
 	module = e.container
 	# ifidx = e.ifidx
 	ifidx = ifcnt
 	ifcnt+=1
 
-	# interface_defs[ifidx] = {'e':e,'f':{}}
-#	sw.classfile_enter(e.getName())
-#	sw.writeln('import tce.*;')
 
 
-
-	import tce_util
 	ifname = "%s.%s"%(module.name,e.name)
 	r = tce_util.getInterfaceIndexWithName(ifname)
-	# print 'get if-index:%s with-name:%s'%(r,ifname)
+
 	if r != -1:
 		ifidx = r
 
@@ -1094,7 +1093,7 @@ def createCodeInterface(e,sw,idt,idx):
 	r = tce_util.isExposeDelegateOfInterfaceWithName(ifname)
 	e.delegate_exposed = r
 	if not e.delegate_exposed:
-		print 'delegate not exposed..'
+		print 'Interface:(%s) delegate not be exposed.'%ifname
 		return
 
 	sw.wln()
@@ -1399,7 +1398,7 @@ def createCodes():
 	#ostream.addHandler(sys.stdout)
 
 	argv = sys.argv
-	outdir ='.'
+	outdir ='./output'
 	pkgname = ''
 	outfile = ''
 	filters=''
@@ -1485,6 +1484,9 @@ def createCodes():
 		#输出模块中的接口列表
 		for n in range(len(ifs)):
 			ifx = ifs[n]
+			if not tce_util.isExposeDelegateOfInterfaceWithName("%s.%s"%(module.name,ifx)):
+				continue
+
 			sw.writeln('%s : %s,'%(ifx,ifx))
 			sw.write('%sProxy : %sProxy'%(ifx,ifx))
 			if n <= len(ifs)-2:
@@ -1570,7 +1572,5 @@ if __name__ =='__main__':
 
 
 # usage:
-# 	tce2java_xml.py
-# 			-i /Users/socketref/Desktop/projects/dvr/ply/code/java/test/sns_mobile_xml.idl
-# 				-o /Users/socketref/Desktop/projects/dvr/ply/code/java
+# 	tce2js.py -i service.idl -o ./output
 

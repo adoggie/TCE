@@ -10,7 +10,9 @@ import string
 
 import lexparser
 from lexparser import *
-from mylex import syntax_result
+from mylex import syntax_result,parse_idlfile
+
+import tce_util
 
 interface_idx = [ ]
 
@@ -243,7 +245,7 @@ def createCodeStruct(e,sw,idt):
 	params=[ ]
 	for m in e.list:
 #		v = m.type.getTypeDefaultValue()
-		v = m.type.getMappingTypeName()
+		v = m.type.getMappingTypeName(e.container)
 		params.append( (m.name,v) )
 	pp =map(lambda x: '%s:%s'%(x[0],x[1]),params)
 	ps = string.join(pp,',')
@@ -253,8 +255,8 @@ def createCodeStruct(e,sw,idt):
 	sw.idt_inc()
 
 	for m in e.list:
-		d = m.type.getTypeDefaultValue()
-		v = m.type.getMappingTypeName()
+		d = m.type.getTypeDefaultValue(e.container)
+		v = m.type.getMappingTypeName(e.container)
 
 		sw.writeln("public var %s:%s = %s;"%(m.name,v,d))
 	sw.wln()
@@ -377,7 +379,7 @@ def createCodeSequence(e,sw,idt):
 
 	if isinstance(e.type,Builtin):
 		sw.scope_begin()
-		sw.define_var("_o",e.type.getMappingTypeName(),e.type.getTypeDefaultValue() )
+		sw.define_var("_o",e.type.getMappingTypeName(e.container),e.type.getTypeDefaultValue(e.container) )
 		Builtin_Python.unserial(e.type.type,'_o','d',sw.idt,sw)
 		sw.writeln("this.ds.push(_o);")
 		sw.scope_end()
@@ -442,7 +444,7 @@ def createCodeDictionary(e,sw,idt):
 
 	if isinstance( e.first,Builtin):
 		sw.scope_begin()
-		sw.define_var('k',e.first.getMappingTypeName(),'_pair.key as %s'%e.first.getMappingTypeName())
+		sw.define_var('k',e.first.getMappingTypeName(e.container),'_pair.key as %s'%e.first.getMappingTypeName(e.container))
 		Builtin_Python.serial(e.first.type,'k',idt,sw)
 		sw.scope_end()
 	elif isinstance( e.first,Sequence) or isinstance(e.first,Dictionary):
@@ -455,13 +457,13 @@ def createCodeDictionary(e,sw,idt):
 		sw.scope_end()
 	else:
 		sw.scope_begin()
-		sw.define_var('k',e.first.getMappingTypeName(),'_pair.key as %s'%e.first.getMappingTypeName() )
+		sw.define_var('k',e.first.getMappingTypeName(e.container),'_pair.key as %s'%e.first.getMappingTypeName(e.container) )
 		sw.writeln("k.marshall(d);")
 		sw.scope_end()
 
 	if isinstance( e.second,Builtin):
 		sw.scope_begin()
-		sw.define_var('v',e.second.getMappingTypeName(),'_pair.value as %s'%e.second.getMappingTypeName())
+		sw.define_var('v',e.second.getMappingTypeName(e.container),'_pair.value as %s'%e.second.getMappingTypeName(e.container))
 		Builtin_Python.serial(e.second.type,'v',idt,sw)
 		sw.scope_end()
 	elif isinstance( e.second,Sequence) or isinstance(e.second,Dictionary):
@@ -474,7 +476,7 @@ def createCodeDictionary(e,sw,idt):
 		sw.scope_end()
 	else:
 		sw.scope_begin()
-		sw.define_var('v',e.second.getMappingTypeName(),'_pair.value as %s'%e.second.getMappingTypeName())
+		sw.define_var('v',e.second.getMappingTypeName(e.container),'_pair.value as %s'%e.second.getMappingTypeName(e.container))
 		sw.writeln("v.marshall(d);")
 		sw.scope_end()
 	sw.scope_end() # end for
@@ -495,28 +497,28 @@ def createCodeDictionary(e,sw,idt):
 	sw.writeln("for(var _p:uint=0;_p < _size;_p++){").idt_inc()
 
 	if isinstance(e.first,Builtin):
-		sw.define_var("_k",e.first.getMappingTypeName(),e.first.getTypeDefaultValue() )
+		sw.define_var("_k",e.first.getMappingTypeName(e.container),e.first.getTypeDefaultValue(e.container) )
 		Builtin_Python.unserial(e.first.type,'_k','d',sw.idt,sw)
 	elif isinstance(e.first,Sequence) or isinstance(e.first,Dictionary):
-		sw.define_var("_k",e.first.getMappingTypeName(),e.first.getTypeDefaultValue() )
+		sw.define_var("_k",e.first.getMappingTypeName(e.container),e.first.getTypeDefaultValue(e.container) )
 		sw.define_var('_c1','%shlp'%e.first.name,'new %shlp(_k)'%e.first.name)
 		sw.writeln('r = _c1.unmarshall(d);')
 		sw.writeln('if(!r) return false;')
 	else:
-		sw.define_var("_k",e.first.getMappingTypeName(),e.first.getTypeDefaultValue() )
+		sw.define_var("_k",e.first.getMappingTypeName(e.container),e.first.getTypeDefaultValue(e.container) )
 		sw.writeln('r = _k.unmarshall(d);')
 		sw.writeln('if(!r) return false;')
 
 	if isinstance(e.second,Builtin):
-		sw.define_var("_v",e.second.getMappingTypeName(),e.second.getTypeDefaultValue() )
+		sw.define_var("_v",e.second.getMappingTypeName(e.container),e.second.getTypeDefaultValue(e.container) )
 		Builtin_Python.unserial(e.second.type,'_v','d',sw.idt,sw)
 	elif isinstance(e.second,Sequence) or isinstance(e.second,Dictionary):
-		sw.define_var("_v",e.second.getMappingTypeName(),e.second.getTypeDefaultValue() )
+		sw.define_var("_v",e.second.getMappingTypeName(e.container),e.second.getTypeDefaultValue(e.container) )
 		sw.define_var('_c2','%shlp'%e.second.name,'new %shlp(_k)'%e.second.name)
 		sw.writeln('r = _c2.unmarshall(d);')
 		sw.writeln('if(!r) return false;')
 	else:
-		sw.define_var("_v",e.second.getMappingTypeName(),e.second.getTypeDefaultValue() )
+		sw.define_var("_v",e.second.getMappingTypeName(e.container),e.second.getTypeDefaultValue(e.container) )
 		sw.writeln('r = _v.unmarshall(d);')
 		sw.writeln('if(!r) return false;')
 
@@ -607,7 +609,8 @@ def createCodeInterface(e,sw,idt,idx):
 
 	createInterfaceProxy(e,sw,ifidx)
 
-	if not e.delegate_exposed:
+	expose = tce_util.isExposeDelegateOfInterfaceWithName(ifname)
+	if not expose:
 		return
 
 	sw.classfile_enter(e.getName())
@@ -629,13 +632,13 @@ def createCodeInterface(e,sw,idt,idx):
 		sw.wln()
 		params=[]
 		for p in m.params:
-			params.append( (p.id,p.type.getMappingTypeName()) )
+			params.append( (p.id,p.type.getMappingTypeName(e.container)) )
 		list =[]
 		for v,t in params:
 			list.append('%s:%s'%(v,t))
 		s = string.join( list,',')
 		if s: s += ','
-		sw.writeln('public function %s(%sctx:RpcContext = null):%s{'%(m.name,s,m.type.getMappingTypeName() ) ).idt_inc()
+		sw.writeln('public function %s(%sctx:RpcContext = null):%s{'%(m.name,s,m.type.getMappingTypeName(e.container) ) ).idt_inc()
 		#------------定义默认返回函数----------------------
 
 		if isinstance( m.type ,Builtin ):
@@ -644,13 +647,13 @@ def createCodeInterface(e,sw,idt,idx):
 				sw.scope_end()
 				continue
 			else:
-				sw.writeln("return %s;"%m.type.getTypeDefaultValue())
+				sw.writeln("return %s;"%m.type.getTypeDefaultValue(e.container))
 		elif isinstance(m.type,Sequence):
-			sw.writeln("return %s;"%m.type.getTypeDefaultValue() )
+			sw.writeln("return %s;"%m.type.getTypeDefaultValue(e.container) )
 		elif isinstance(m.type,Dictionary):
-			sw.writeln("return %s;"%m.type.getTypeDefaultValue() )
+			sw.writeln("return %s;"%m.type.getTypeDefaultValue(e.container) )
 		else:
-			sw.writeln("return %s;"%m.type.getTypeDefaultValue() )
+			sw.writeln("return %s;"%m.type.getTypeDefaultValue(e.container) )
 		sw.scope_end()
 
 	sw.scope_end() # end class
@@ -707,10 +710,10 @@ def createCodeInterface(e,sw,idt,idx):
 		#防止参数重命名，加上 _p_前缀
 		for p in m.params:
 			if isinstance(p.type,Builtin):
-				sw.define_var(p.id,p.type.getMappingTypeName())
+				sw.define_var(p.id,p.type.getMappingTypeName(e.container))
 				Builtin_Python.unserial(p.type.type,p.id,'d',idt,sw)
 			elif isinstance(p.type,Sequence) or isinstance(p.type,Dictionary):
-				sw.define_var(p.id,p.type.getMappingTypeName(),'new %s()'%p.type.getMappingTypeName())
+				sw.define_var(p.id,p.type.getMappingTypeName(e.container),'new %s()'%p.type.getMappingTypeName(e.container))
 				sw.scope_begin()
 				sw.define_var('_c','%shlp'%p.type.name,'new %shlp(%s)'%(p.type.name,p.id))
 				sw.writeln('r = _c.unmarshall(d);')
@@ -718,7 +721,7 @@ def createCodeInterface(e,sw,idt,idx):
 				sw.scope_end()
 
 			else:
-				sw.define_var(p.id,p.type.getMappingTypeName(),'new %s()'%p.type.getMappingTypeName())
+				sw.define_var(p.id,p.type.getMappingTypeName(e.container),'new %s()'%p.type.getMappingTypeName(e.container))
 
 				sw.writeln('r = %s.unmarshall(d);'%p.id)
 				sw.writeln('if(!r) return false;')
@@ -733,7 +736,7 @@ def createCodeInterface(e,sw,idt,idx):
 		if isinstance(m.type,Builtin) and m.type.type =='void':
 			sw.writeln("servant.%s(%sctx)"%(m.name,ps) )
 		else:
-			sw.define_var('cr',m.type.getMappingTypeName())
+			sw.define_var('cr',m.type.getMappingTypeName(e.container))
 			sw.writeln("cr = servant.%s(%sctx)"%(m.name,ps) )
 
 #			sw.writeln("if cr == None:").idt_inc()
@@ -841,7 +844,7 @@ def createInterfaceProxy(e,sw,ifidx):
 		list =[]
 		for p in m.params:
 #			params.append( p.id,p.type.getMappingTypeName())
-			list.append('%s:%s'%(p.id,p.type.getMappingTypeName()))
+			list.append('%s:%s'%(p.id,p.type.getMappingTypeName(e.container)))
 		s = string.join( list,',')
 		# 函数定义开始
 		if s: s = s + ','
@@ -929,7 +932,7 @@ def createInterfaceProxy(e,sw,ifidx):
 #			sw.define_var('r','Boolean','true')
 
 			if isinstance(m.type,Builtin):
-				sw.define_var('_p',m.type.getMappingTypeName(),m.type.getTypeDefaultValue())
+				sw.define_var('_p',m.type.getMappingTypeName(e.container),m.type.getTypeDefaultValue(e.container))
 				Builtin_Python.unserial(m.type.type,'_p','d',sw.idt,sw)
 			elif isinstance(m.type,Sequence):
 				sw.define_var('_p','Array','new Array()')
@@ -1110,7 +1113,7 @@ def createCodes():
 	ostream.addHandler(sys.stdout)
 
 	argv = sys.argv
-	outdir ='./'
+	outdir ='./output'
 	pkgname = ''
 	filters=''
 	while argv:
@@ -1141,8 +1144,17 @@ def createCodes():
 
 	if not os.path.exists(outdir):
 		os.mkdir(outdir)
-	os.chdir( outdir )
 
+
+
+	idlfiles = file.strip().split(',')
+
+	for file in idlfiles:
+		lexparser.curr_idl_path = os.path.dirname(file)
+		parse_idlfile(file)
+
+	unit = syntax_result()
+	os.chdir( outdir )
 
 	sw = StreamWriter()
 
@@ -1152,23 +1164,110 @@ def createCodes():
 	sw.createPackage(pkgname)
 	sw.pkg_enter(pkgname)
 #	ostream.write(headtitles)
-	unit = syntax_result(content)
-	filters = [ x for x in map(string.strip,filters.split(' ')) if x]
+	# unit = syntax_result(content)
+	# filters = [ x for x in map(string.strip,filters.split(' ')) if x]
 	sys.path.append(os.path.dirname(__file__))
 	import tce_util
 	tce_util.filterInterface(unit, filters, ifcnt)
 
-	for idx,e in enumerate(unit.list):
-		createCodeFrame(e,idx,sw)
+	print global_modules_defs
+
+	for module in global_modules:
+
+		for idx,e in enumerate(module.list):
+			createCodeFrame(e,idx,sw)
 #		ostream.write(NEWLINE)
 
 	sw.pkg_leave()
 
 
 
+class LanguageActionScript(object):
+	language = 'as'
+	class Builtin:
+		@classmethod
+		def defaultValue(cls,this):
+			r = '""'    #  as 'string'
+			if this.type in ('byte','short','int','long','float','double'):
+				r = '0'
+			elif this.type == 'bool':
+				r = 'false'
+			return r
+
+		@classmethod
+		def typeName(cls,this):
+			r = ''
+			type = this.type
+			if type in ('byte',) : #'bool'):
+				r ='uint'
+			if type in ('bool',):
+				r = 'Boolean'
+			if type in ('short','int'):
+				r = 'int'
+			elif type in ('float','long','double'):
+				r = 'Number'
+			elif type in ('string'):
+				r = "String"
+			elif type in ('void'):
+				r ='void'
+
+			return r
+
+
+	class Sequence:
+		@classmethod
+		def defaultValue(cls,this,call_module):
+			# if this.type.name == 'byte':
+			# 	return 'new ArrayBuffer(0)'  #
+			return 'new Array()'
+
+		@classmethod
+		def typeName(cls,this,call_module):
+			# if this.type.name == 'byte':
+			# 	return 'ArrayBuffer'
+			return 'Array'
+
+
+	class Dictionary:
+		@classmethod
+		def defaultValue(cls,this,call_module):
+			return 'new HashMap()'
+
+		@classmethod
+		def typeName(cls,this,call_module):
+			return 'HashMap'
+
+
+	class Struct:
+		@classmethod
+		def defaultValue(cls,this,call_module):
+			return 'new %s()'%this.getTypeName(call_module)
+
+		@classmethod
+		def typeName(cls,this,call_module):
+			r = this.name
+			if this.module:
+				r = '%s.%s'%(this.module,this.name)
+			return r
+
+	class Module:
+		def __init__(self,m):
+			self.m = m
+
 lexparser.language = 'as'
+
+lexparser.lang_kws = ['for','var','while']
+lexparser.codecls = LanguageActionScript
+
 if __name__ =='__main__':
 	createCodes()
 
-
-
+"""
+usage:
+tce2as.py -i service.idl,.. -o output_dir
+"""
+"""
+tce2as.py :
+	sw.newVariant() is not implemented.
+	Tobe Next..
+"""
