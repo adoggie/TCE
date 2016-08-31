@@ -770,6 +770,8 @@ def createProxy(e,sw,ifidx):
 	#-- end destroy()
 
 	for opidx,m in enumerate(e.list): # function list
+		opidx = m.index
+
 		sw.wln()
 		#------------BEGIN TOWAY CALL with timeout ----------------------------------------
 		params=[]
@@ -974,6 +976,7 @@ def createProxy(e,sw,ifidx):
 	sw.writeln('var view = new DataView(array.buffer);')
 	sw.writeln('var pos=0;')
 	for opidx,m in enumerate(e.list):
+		opidx = m.index
 		# void 函数接口也支持 async 回调
 		# if m.type.name == 'void': continue
 
@@ -1082,6 +1085,8 @@ def createCodeInterface(e,sw,idt,idx):
 	interface_defs[ifidx] = {'e':e,'f':{}}
 	fileifx.write('<if id="%s" name="%s.%s"/>\n'%(ifidx,module.name,e.name))
 	fileifx.flush()
+
+	tce_util.rebuildFunctionIndex(e)
 #
 #	#接口对象的委托类
 	createProxy(e,sw,ifidx)
@@ -1165,6 +1170,8 @@ def createCodeInterface(e,sw,idt,idx):
 #	sw.writeln('boolean r=false;')
 #	sw.writeln('tce.RpcMessageXML m = (tce.RpcMessageXML)m_;')
 	for opidx,m in enumerate(e.list):
+		opidx = m.index
+
 		sw.writeln('if(m.opidx == %s ){'%opidx).idt_inc()
 		sw.writeln('return this.func_%s_delegate(m);'%opidx )
 		sw.scope_end()
@@ -1174,6 +1181,7 @@ def createCodeInterface(e,sw,idt,idx):
 
 	#开始委托 函数定义
 	for opidx,m in enumerate(e.list): # function list
+		opidx = m.index
 		sw.writeln('this.func_%s_delegate = function(m){'%(opidx) ).idt_inc()
 		params=[ ]
 		sw.writeln('var r = false;')
@@ -1493,7 +1501,69 @@ def createCodes():
 	# 	ostream.write(NEWLINE)
 
 
+class LanguageJavascript(object):
+	language = 'js'
+	class Builtin:
+		@classmethod
+		def defaultValue(cls,this):
+			r = '""'    #  as 'string'
+			if this.type in ('byte','short','int','long','float','double'):
+				r = '0'
+			elif this.type == 'bool':
+				r = 'false'
+			return r
+
+		@classmethod
+		def typeName(cls,this):
+			r = ''
+			return r
+
+
+	class Sequence:
+		@classmethod
+		def defaultValue(cls,this,call_module):
+			if this.type.name == 'byte':
+				return 'new ArrayBuffer(0)'  #
+			return '[]'
+
+		@classmethod
+		def typeName(cls,this,call_module):
+			if this.type.name == 'byte':
+				return 'ArrayBuffer'
+			return 'Array'
+
+
+	class Dictionary:
+		@classmethod
+		def defaultValue(cls,this,call_module):
+			return '{}'
+
+		@classmethod
+		def typeName(cls,this,call_module):
+			return ''
+
+
+	class Struct:
+		@classmethod
+		def defaultValue(cls,this,call_module):
+			return 'new %s()'%this.getTypeName(call_module)
+
+		@classmethod
+		def typeName(cls,this,call_module):
+			r = this.name
+			if this.module:
+				r = '%s.%s'%(this.module,this.name)
+			return r
+
+	class Module:
+		def __init__(self,m):
+			self.m = m
+
+
 lexparser.language = 'js'
+
+lexparser.lang_kws = ['for','var','while']
+lexparser.codecls = LanguageJavascript
 
 if __name__ =='__main__':
 	createCodes()

@@ -292,6 +292,7 @@ class OperateMember(Contained):
 		self.name = name		#函数名称
 		self.type = type 		#返回值类型   [ type  foo(params) ]
 		self.params = params	#形参集合
+		self.index = 0 		#函数的索引编号
 		pass
 		
 class Struct(Container,Contained,TypeBase):
@@ -463,7 +464,7 @@ class Builtin(TypeBase):
 	def isBuiltinType(type):
 		return Builtin.tables.count(type)
 
-	def getTypeDefaultValue(self,call_module=''):
+	def getTypeDefaultValue(self,call_module):
 		return codecls.Builtin.defaultValue(self)
 
 		# r = 'None'
@@ -526,7 +527,7 @@ class Builtin(TypeBase):
 			# 	r ='void'
 		return r
 
-	def getMappingTypeName(self,call_module=''):
+	def getMappingTypeName(self,call_module):
 		return codecls.Builtin.typeName(self)
 
 		r = '-^|^*'*5

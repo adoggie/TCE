@@ -295,7 +295,7 @@ def createCodeStruct(e,sw,idt):
 	params=[ ]
 	for m in e.list:
 #		v = m.type.getTypeDefaultValue()
-		v = m.type.getMappingTypeName()
+		v = m.type.getMappingTypeName(e.container)
 		params.append( (m.name,v) )
 	pp =map(lambda x: '%s:%s'%(x[0],x[1]),params)
 	ps = string.join(pp,',') #构造函数默认参数列表
@@ -306,15 +306,15 @@ def createCodeStruct(e,sw,idt):
 	sw.idt_inc()
 
 	for m in e.list:
-		d = m.type.getTypeDefaultValue()
-		v = m.type.getMappingTypeName()
+		d = m.type.getTypeDefaultValue(e.container)
+		v = m.type.getMappingTypeName(e.container)
 		sw.writeln("%s \t%s;"%(v,m.name))
 
 	sw.writeln("//构造函数")
 	sw.writeln('%s(){'%(e.getName(),) ).idt_inc()
 	for m in e.list:
-		d = m.type.getTypeDefaultValue()
-		v = m.type.getMappingTypeName()
+		d = m.type.getTypeDefaultValue(e.container)
+		v = m.type.getMappingTypeName(e.container)
 		sw.writeln("this->%s = %s;"%(m.name,d))
 	sw.scope_end()
 
@@ -385,7 +385,7 @@ def createCodeSequence(e,sw,idt):
 	sw.wln()
 #	sw.writeln("typedef boost::shared_ptr< <std::vector<%s> > sequence_type_t;"%e.type.name)
 
-	sw.writeln("typedef std::vector< %s >  sequence_type;"%e.type.getMappingTypeName())
+	sw.writeln("typedef std::vector< %s >  sequence_type;"%e.type.getMappingTypeName(e.container))
 #	sw.writeln("typedef const boost::shared_ptr< <std::vector<%s> > const_sequence_type;"%e.type.name)
 	sw.writeln('//# -- SEQUENCE --')
 	sw.writeln("sequence_type &ds;")
@@ -425,7 +425,7 @@ def createCodeSequence(e,sw,idt):
 
 	if isinstance(e.type,Builtin):
 		sw.scope_begin()
-		sw.define_var("_o",e.type.getMappingTypeName(),e.type.getTypeDefaultValue() )
+		sw.define_var("_o",e.type.getMappingTypeName(e.container),e.type.getTypeDefaultValue(e.container) )
 		Builtin_Python.unserial(e.type.type,'_o','d',sw.idt,sw)
 		sw.writeln("this->ds.push_back(_o);")
 		sw.scope_end()
@@ -475,8 +475,8 @@ def createCodeDictionary(e,sw,idt):
 	sw.wln()
 	sw.writeln('struct %shlp {'%e.getName() ).idt_inc()
 	sw.writeln('//# -- THIS IS DICTIONARY! --')
-	sw.writeln('typedef std::map< %s,%s > hash_type;'%(e.first.getMappingTypeName(),e.second.getMappingTypeName()))
-	sw.writeln('typedef std::pair< %s,%s > hash_pair;'%(e.first.getMappingTypeName(),e.second.getMappingTypeName()))
+	sw.writeln('typedef std::map< %s,%s > hash_type;'%(e.first.getMappingTypeName(e.container),e.second.getMappingTypeName(e.container)))
+	sw.writeln('typedef std::pair< %s,%s > hash_pair;'%(e.first.getMappingTypeName(e.container),e.second.getMappingTypeName(e.container)))
 	sw.define_var('ds','hash_type&')
 	sw.wln()
 # sw.writeln('ds :HashMap = null;').wln()
@@ -497,43 +497,43 @@ def createCodeDictionary(e,sw,idt):
 
 	if isinstance( e.first,Builtin):
 		sw.scope_begin()
-		sw.define_var('k',e.first.getMappingTypeName(),'_itr->first')
+		sw.define_var('k',e.first.getMappingTypeName(e.container),'_itr->first')
 		Builtin_Python.serial(e.first.type,'k',idt,sw)
 		sw.scope_end()
 	elif isinstance( e.first,Sequence) or isinstance(e.first,Dictionary):
 		sw.scope_begin()
 		if isinstance(e.first,Sequence):
 #			sw.define_var('container','%shlp::sequence_type'%e.first.name,'new %shlp(_pair.key as Array)'%(e.first.name) )
-			sw.writeln('%shlp _c( *(%s *) &(_itr->first) );'%(e.first.name,e.first.getMappingTypeName() ))
+			sw.writeln('%shlp _c( *(%s *) &(_itr->first) );'%(e.first.name,e.first.getMappingTypeName(e.container) ))
 		else:
 #			sw.define_var('container','%shlp'%e.first.name,'new %shlp(_pair.key as HashMap)'%(e.first.name) )
-			sw.writeln('%shlp _c(*(%s *) &(_itr->first) );'%(e.first.name,e.first.getMappingTypeName()))
+			sw.writeln('%shlp _c(*(%s *) &(_itr->first) );'%(e.first.name,e.first.getMappingTypeName(e.container)))
 		sw.writeln('_c.marshall(d);')
 		sw.scope_end()
 	else:
 		sw.scope_begin()
-		sw.define_var('&k',e.first.getMappingTypeName(),'*(%s *) &(_itr->first)'%e.first.getMappingTypeName() )
+		sw.define_var('&k',e.first.getMappingTypeName(e.container),'*(%s *) &(_itr->first)'%e.first.getMappingTypeName(e.container) )
 		sw.writeln("k.marshall(d);")
 		sw.scope_end()
 
 	if isinstance( e.second,Builtin):
 		sw.scope_begin()
-		sw.define_var('v',e.second.getMappingTypeName(),'_itr->second')
+		sw.define_var('v',e.second.getMappingTypeName(e.container),'_itr->second')
 		Builtin_Python.serial(e.second.type,'v',idt,sw)
 		sw.scope_end()
 	elif isinstance( e.second,Sequence) or isinstance(e.second,Dictionary):
 		sw.scope_begin()
 		if isinstance(e.second,Sequence):
-			sw.writeln('%shlp _c( *(%s*)&(_itr->second) );'%(e.second.name,e.second.getMappingTypeName()))
+			sw.writeln('%shlp _c( *(%s*)&(_itr->second) );'%(e.second.name,e.second.getMappingTypeName(e.container)))
 #			sw.define_var('container','%shlp'%e.second.name,'new %shlp(_pair.value as Array)'%(e.second.name) )
 		else:
-			sw.writeln('%shlp _c( *(%s*)&(_itr->second) );'%(e.second.name,e.second.getMappingTypeName()))
+			sw.writeln('%shlp _c( *(%s*)&(_itr->second) );'%(e.second.name,e.second.getMappingTypeName(e.container)))
 #			sw.define_var('container','%shlp'%e.second.name,'new %shlp(_pair.value as HashMap)'%(e.second.name) )
 		sw.writeln('_c.marshall(d);')
 		sw.scope_end()
 	else:
 		sw.scope_begin()
-		sw.define_var('&v',e.second.getMappingTypeName(),'*(%s *)&(_itr->second)'%e.second.getMappingTypeName() )
+		sw.define_var('&v',e.second.getMappingTypeName(e.container),'*(%s *)&(_itr->second)'%e.second.getMappingTypeName(e.container) )
 		sw.writeln("v.marshall(d);")
 		sw.scope_end()
 	sw.scope_end() # end for
@@ -552,28 +552,28 @@ def createCodeDictionary(e,sw,idt):
 	sw.writeln("for(size_t _p=0;_p < _size;_p++){").idt_inc()
 
 	if isinstance(e.first,Builtin):
-		sw.define_var("_k",e.first.getMappingTypeName(),e.first.getTypeDefaultValue() )
+		sw.define_var("_k",e.first.getMappingTypeName(e.container),e.first.getTypeDefaultValue(e.container) )
 		Builtin_Python.unserial(e.first.type,'_k','d',sw.idt,sw)
 	elif isinstance(e.first,Sequence) or isinstance(e.first,Dictionary):
-		sw.define_var("_k",e.first.getMappingTypeName() )
+		sw.define_var("_k",e.first.getMappingTypeName(e.container) )
 		sw.define_var('_c1(_k)','%shlp'%e.first.name)
 		sw.writeln('r = _c1.unmarshall(d);')
 		sw.writeln('if(!r) return false;')
 	else:
-		sw.define_var("_k",e.first.getMappingTypeName())
+		sw.define_var("_k",e.first.getMappingTypeName(e.container))
 		sw.writeln('r = _k.unmarshall(d);')
 		sw.writeln('if(!r) return false;')
 
 	if isinstance(e.second,Builtin):
-		sw.define_var("_v",e.second.getMappingTypeName(),e.second.getTypeDefaultValue() )
+		sw.define_var("_v",e.second.getMappingTypeName(e.container),e.second.getTypeDefaultValue(e.container) )
 		Builtin_Python.unserial(e.second.type,'_v','d',sw.idt,sw)
 	elif isinstance(e.second,Sequence) or isinstance(e.second,Dictionary):
-		sw.define_var("_v",e.second.getMappingTypeName() )
+		sw.define_var("_v",e.second.getMappingTypeName(e.container) )
 		sw.define_var('_c2(_v)','%shlp'%e.second.name)
 		sw.writeln('r = _c2.unmarshall(d);')
 		sw.writeln('if(!r) return false;')
 	else:
-		sw.define_var("_v",e.second.getMappingTypeName())
+		sw.define_var("_v",e.second.getMappingTypeName(e.container))
 		sw.writeln('r = _v.unmarshall(d);')
 		sw.writeln('if(!r) return false;')
 
@@ -607,9 +607,11 @@ def createAsyncCallBack(e,sw):
 	sw.idt_dec().writeln('public:').idt_inc()
 	#sw.writeln('virtual ~%s_AsyncCallBack(){}
 	for opidx,m in enumerate(e.list): # function list
+		opidx = m.index
+
 		if m.type.name == 'void':
 			continue
-		sw.writeln('virtual void %s(const %s & result,%sPrx* prx){'%(m.name,m.type.getMappingTypeName(),e.getName() ) ).idt_inc()
+		sw.writeln('virtual void %s(const %s & result,%sPrx* prx){'%(m.name,m.type.getMappingTypeName(e.container),e.getName() ) ).idt_inc()
 
 		sw.scope_end().wln()
 	sw.struct_end()
@@ -663,15 +665,15 @@ def createFunc_AsyncParser(e,sw,m,idx,ifidx,opidx):
 		#			sw.define_var('r','Boolean','true')
 
 		if isinstance(m.type,Builtin):
-			sw.define_var('_p',m.type.getMappingTypeName(),m.type.getTypeDefaultValue())
+			sw.define_var('_p',m.type.getMappingTypeName(e.container),m.type.getTypeDefaultValue(e.container))
 			Builtin_Python.unserial(m.type.type,'_p','d',idt,sw)
 		elif isinstance(m.type,Sequence):
-			sw.define_var('_p',m.type.getMappingTypeName())
+			sw.define_var('_p',m.type.getMappingTypeName(e.container))
 			sw.define_var('_c(_p)','%shlp'%m.type.name)
 			sw.writeln(' _c.unmarshall(d);')
 		elif isinstance(m.type,Dictionary):
 #			sw.define_var('_p','HashMap','new HashMap()')
-			sw.define_var('_p',m.type.getMappingTypeName())
+			sw.define_var('_p',m.type.getMappingTypeName(e.container))
 #			sw.define_var('_c','%shlp'%m.type.name,'new %shlp(_p)'%m.type.name)
 			sw.define_var('_c(_p)','%shlp'%m.type.name)
 			sw.writeln('_c.marshall(d);')
@@ -701,7 +703,7 @@ def createFunc_Twoway(e,sw,m,idx,ifidx,opidx):
 	sw.wln()
 	for p in m.params:
 	#			params.append( p.id,p.type.getMappingTypeName())
-		list.append('%s %s'%(p.type.getMappingTypeName(),p.id) )
+		list.append('%s %s'%(p.type.getMappingTypeName(e.container),p.id) )
 	s = string.join( list,',')
 	# 函数定义开始
 	if s: s = s + ','
@@ -709,7 +711,7 @@ def createFunc_Twoway(e,sw,m,idx,ifidx,opidx):
 	oneway = ',bool oneway=false'
 	type = 'void'
 	if m.type.name !='void':
-		type = m.type.getMappingTypeName()
+		type = m.type.getMappingTypeName(e.container)
 		oneway='' #返回类型不为void，不能声明oneway
 
 
@@ -773,14 +775,14 @@ def createFunc_Twoway(e,sw,m,idx,ifidx,opidx):
 	else:
 		sw.writeln('d = mr->paramstream;')
 		if isinstance(m.type,Builtin):
-			sw.define_var('p',m.type.getMappingTypeName())
+			sw.define_var('p',m.type.getMappingTypeName(e.container))
 			Builtin_Python.unserial(m.type.type,'p','d',idt,sw)
 		elif isinstance(m.type,Sequence):
-			sw.define_var('p',m.type.getMappingTypeName())
+			sw.define_var('p',m.type.getMappingTypeName(e.container))
 			sw.define_var('_c(p)','%shlp'%m.type.name)
 			sw.writeln('_c.unmarshall(d);')
 		elif isinstance(m.type,Dictionary):
-			sw.define_var('p',m.type.getMappingTypeName())
+			sw.define_var('p',m.type.getMappingTypeName(e.container))
 			sw.define_var('_c(p)','%shlp'%m.type.name)
 			sw.writeln('_c.unmarshall(d);')
 		else:
@@ -800,7 +802,7 @@ def createFunc_Oneway(e,sw,m,idx,ifidx,opidx):
 	sw.writeln('public:')
 	sw.wln()
 	for p in m.params:
-		list.append('%s %s'%(p.type.getMappingTypeName(),p.id) )
+		list.append('%s %s'%(p.type.getMappingTypeName(e.container),p.id) )
 	s = string.join( list,',')
 	# 函数定义开始
 	if s: s = s + ','
@@ -864,7 +866,7 @@ def createFunc_Async(e,sw,m,idx,ifidx,opidx):
 	sw.writeln('public:')
 	sw.wln()
 	for p in m.params:
-		list.append('%s %s'%(p.type.getMappingTypeName(),p.id) )
+		list.append('%s %s'%(p.type.getMappingTypeName(e.container),p.id) )
 	s = string.join( list,',')
 	# 函数定义开始
 	if s: s = s + ','
@@ -941,6 +943,7 @@ def createServantDelegate(e,sw,idx,ifidx):
 	sw.writeln('this->_index = %s;'%ifidx)
 
 	for opidx,m in enumerate(e.list): # function list
+		opidx = m.index
 		sw.writeln("this->_optlist[%s] = &%s_delegate::%s_dummy;"%(opidx,e.getName(),m.name)) #直接保存 twoway 和 oneway 函数入口
 
 	sw.writeln("this->inst = inst;")
@@ -948,7 +951,7 @@ def createServantDelegate(e,sw,idx,ifidx):
 
 	#开始委托 函数定义
 	for opidx,m in enumerate(e.list): # function list
-
+		opidx = m.index
 		sw.writeln('static bool %s_dummy(tce::RpcContext& ctx){'%(m.name) ).idt_inc()
 		sw.writeln('%s_delegate *pf = (%s_delegate*) ctx.delegate;'%(e.getName(),e.getName()))
 		sw.writeln('return pf->%s(ctx);'%m.name)
@@ -967,10 +970,10 @@ def createServantDelegate(e,sw,idx,ifidx):
 		for p in m.params:
 			if isinstance(p.type,Builtin):
 				
-				sw.define_var(p.id,p.type.getMappingTypeName())
+				sw.define_var(p.id,p.type.getMappingTypeName(e.container))
 				Builtin_Python.unserial(p.type.type,p.id,'d',idt,sw)
 			elif isinstance(p.type,Sequence) or isinstance(p.type,Dictionary):
-				sw.define_var(p.id,p.type.getMappingTypeName())
+				sw.define_var(p.id,p.type.getMappingTypeName(e.container))
 				sw.scope_begin()
 				sw.define_var('_c(%s)'%p.id,'%shlp'%p.type.name)
 				sw.writeln('r = _c.unmarshall(d);')
@@ -978,7 +981,7 @@ def createServantDelegate(e,sw,idx,ifidx):
 				sw.scope_end()
 
 			else:
-				sw.define_var(p.id,p.type.getMappingTypeName())
+				sw.define_var(p.id,p.type.getMappingTypeName(e.container))
 				sw.writeln('r = %s.unmarshall(d);'%p.id)
 				sw.writeln('if(!r) return false;')
 
@@ -991,7 +994,7 @@ def createServantDelegate(e,sw,idx,ifidx):
 		if isinstance(m.type,Builtin) and m.type.type =='void':
 			sw.writeln("this->inst->%s(%sctx);"%(m.name,ps) )
 		else:
-			sw.define_var('cr',m.type.getMappingTypeName())
+			sw.define_var('cr',m.type.getMappingTypeName(e.container))
 			sw.writeln("cr = this->inst->%s(%sctx);"%(m.name,ps) )
 
 		sw.writeln("if( ctx.msg->calltype & tce::RpcMessage::ONEWAY){").idt_inc()
@@ -1070,14 +1073,14 @@ def createServant(e,sw,idx,ifidx):
 		sw.wln()
 		params=[]
 		for p in m.params:
-			params.append( (p.id,p.type.getMappingTypeName()) )
+			params.append( (p.id,p.type.getMappingTypeName(e.container)) )
 		list =[]
 		for v,t in params:
 			list.append('const %s& %s'%(t,v))
 		s = string.join( list,',')
 		if s: s += ','
 		#		retype = 'std::map<%s,%s>'%m.type.first
-		sw.writeln('virtual %s %s(%stce::RpcContext& ctx){'%(m.type.getMappingTypeName() ,m.name,s) ).idt_inc()
+		sw.writeln('virtual %s %s(%stce::RpcContext& ctx){'%(m.type.getMappingTypeName(e.container) ,m.name,s) ).idt_inc()
 		#------------定义默认返回函数----------------------
 
 		if isinstance( m.type ,Builtin ):
@@ -1086,13 +1089,13 @@ def createServant(e,sw,idx,ifidx):
 				sw.scope_end()
 				continue
 			else:
-				sw.writeln("return %s;"%m.type.getTypeDefaultValue())
+				sw.writeln("return %s;"%m.type.getTypeDefaultValue(e.container))
 		elif isinstance(m.type,Sequence):
-			sw.writeln("return %s;"%m.type.getTypeDefaultValue() )
+			sw.writeln("return %s;"%m.type.getTypeDefaultValue(e.container) )
 		elif isinstance(m.type,Dictionary):
-			sw.writeln("return %s;"%m.type.getTypeDefaultValue() )
+			sw.writeln("return %s;"%m.type.getTypeDefaultValue(e.container) )
 		else:
-			sw.writeln("return %s;"%m.type.getTypeDefaultValue() )
+			sw.writeln("return %s;"%m.type.getTypeDefaultValue(e.container) )
 		sw.scope_end()
 
 	sw.struct_end() # end class
@@ -1115,16 +1118,33 @@ ifcnt = 0
 fileifx = open('ifxdef.txt','w') #接口表文件
 def createCodeInterface(e,sw,idt,idx):
 	global  interface_defs,ifcnt
-#	ifidx = ifcnt
-#	ifcnt+=1
-#	print 'ifidx:',ifidx
-	ifidx = e.ifidx
+	ifidx = ifcnt
+	ifcnt+=1
+
+
+	import tce_util
+	ifname = "%s.%s"%(e.container.name,e.name)
+	r = tce_util.getInterfaceIndexWithName(ifname)
+	# print 'get if-index:%s with-name:%s'%(r,ifname)
+	if r != -1:
+		ifidx = r
+
+	e.ifidx = ifidx
+
 	interface_defs[ifidx] = {'e':e,'f':{}}
-#	print ifidx
+
 	fileifx.write('<if id="%s" name="%s"/>\n'%(ifidx,e.name))
 	fileifx.flush()
-	
-	if e.delegate_exposed:
+
+
+	tce_util.rebuildFunctionIndex(e)
+
+
+	expose = tce_util.isExposeDelegateOfInterfaceWithName(ifname)
+
+
+	# if e.delegate_exposed:
+	if expose:
 		sw.writeln('class %s_delegate;'%e.getName())
 		createServant(e,sw,idx,ifidx)
 		createServantDelegate(e,sw,idx,ifidx)
@@ -1152,6 +1172,8 @@ def createCodeInterface(e,sw,idt,idx):
 #	sw.writeln('boost::shared_ptr<tce::RpcConnection>  conn')
 
 	for opidx,m in enumerate(e.list): # function list
+		opidx = m.index
+
 		sw.wln()
 		interface_defs[ifidx]['f'][opidx] = m	#记录接口的函数对象
 
@@ -1448,10 +1470,93 @@ def createCodes():
 	sw.pkg_leave()
 
 
+
+class LanguageCPlusPlus(object):
+	language = 'cpp'
+	class Builtin:
+		@classmethod
+		def defaultValue(cls,this):
+			r = '""'    #  as 'string'
+			if this.type in ('byte','short','int','long','float','double'):
+				r = '0'
+			elif this.type == 'bool':
+				r = 'false'
+			return r
+
+		@classmethod
+		def typeName(cls,this):
+			r = ''
+			type = this.type
+			if type in ('byte',) : #'bool'):
+				r ='unsigned char'
+			if type in ('bool',):
+				r = 'bool'
+			if type in ('short',):
+				r ='short'
+			if type in ('int',):
+				r = 'int'
+			elif type in ('float',):
+				r = 'float'
+			elif type in ('long',):
+				r = 'long'
+				if lexparser.arch =='32':
+					r = 'long long'
+			elif type in ('double',):
+				r = 'double'
+			elif type in ('string',):
+				r = "std::string"
+			elif type in ('void',):
+				r ='void'
+			return r
+
+	class Sequence:
+		@classmethod
+		def defaultValue(cls,this,call_module):
+			return 'std::vector< %s >()'%this.type.getMappingTypeName(call_module)
+
+		@classmethod
+		def typeName(cls,this,call_module):
+
+			return 'std::vector< %s >'%this.type.getMappingTypeName(call_module)
+
+
+	class Dictionary:
+		@classmethod
+		def defaultValue(cls,this,call_module):
+			return 'std::map< %s,%s >()'%(this.first.getMappingTypeName(call_module),
+											 this.second.getMappingTypeName(call_module)
+											)
+
+		@classmethod
+		def typeName(cls,this,call_module):
+			return 'std::map< %s,%s >'%(this.first.getMappingTypeName(call_module),
+									this.second.getMappingTypeName(call_module) )
+
+
+	class Struct:
+		@classmethod
+		def defaultValue(cls,this,call_module):
+			return '%s()'%this.getTypeName(call_module)
+
+		@classmethod
+		def typeName(cls,this,call_module):
+			r = this.name
+			if this.module:
+				r = '%s::%s'%(this.module,this.name)
+			return r
+
+	class Module:
+		def __init__(self,m):
+			self.m = m
+
 lexparser.language = 'cpp'
 lexparser.arch = '64' # 64位操作系统
 
+lexparser.lang_kws = ['for', 'namespace','float',
+					  'new', 'class',  'public','protected','private','struct',
+					  'while', 'do', 'virtual','throw',]
 
+lexparser.codecls = LanguageCPlusPlus
 
 if __name__ =='__main__':
 	createCodes()

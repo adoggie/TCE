@@ -731,6 +731,8 @@ def createProxy(e,sw,ifidx):
 	sw.writeln('-(void)destroy;')
 
 	for opidx,m in enumerate(e.list): # function list
+		opidx = m.index
+
 		sw.wln()
 		#		interface_defs[ifidx]['f'][opidx] = m	#记录接口的函数对象
 		list =[]
@@ -795,6 +797,8 @@ def createProxy(e,sw,ifidx):
 
 	#-- member funtion list --
 	for opidx,m in enumerate(e.list): # function list
+		opidx = m.index
+
 		sw.wln()
 		list =[]
 		for n  in range(len(m.params)):
@@ -918,6 +922,7 @@ def createProxy(e,sw,ifidx):
 	sw.writeln('-(void) callReturn:(RpcMessage*)m1 m2:(RpcMessage*)m2{').idt_inc()
 
 	for opidx,m in enumerate(e.list):
+		opidx = m.index
 		v = sw.newVariant('v')
 		fx = sw.newVariant('fx')
 		sw.writeln('if(m1.opidx == %s){'%opidx).idt_inc()
@@ -968,6 +973,8 @@ def createProxy(e,sw,ifidx):
 interface_defs={}
 ifcnt = 0
 
+fileifx = open('ifxdef.txt','w') #接口表文件
+
 def createCodeInterface(e,sw,idt,idx):
 	global  interface_defs,ifcnt
 
@@ -985,6 +992,11 @@ def createCodeInterface(e,sw,idt,idx):
 	#--- end
 	e.ifidx = ifidx
 	print 'if-index:',ifidx
+
+	fileifx.write('<if id="%s" name="%s.%s"/>\n'%(ifidx,module.name,e.name))
+	fileifx.flush()
+
+	tce_util.rebuildFunctionIndex(e)
 
 	interface_defs[ifidx] = {'e':e,'f':{}}
 
@@ -1096,6 +1108,7 @@ def createCodeInterface(e,sw,idt,idx):
 	sw.writeln('-(void) invoke:(RpcMessage*)m{').idt_inc()
 
 	for opidx,m in enumerate(e.list):
+		opidx = m.index
 		sw.writeln('if(m.opidx == %s ){'%opidx).idt_inc()
 		sw.writeln('[self func_%s_delegate:m];'%m.name )
 		sw.scope_end()
@@ -1103,6 +1116,7 @@ def createCodeInterface(e,sw,idt,idx):
 
 	#开始委托 函数定义
 	for opidx,m in enumerate(e.list): # function list
+		opidx = m.index
 		# sw.writeln('boolean func_%s_delegate(RpcMessage m){'%(m.name) ).idt_inc()
 		sw.wln()
 		sw.resetVariant()

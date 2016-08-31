@@ -586,11 +586,22 @@ class a_proxy:
 '''
 interface_defs={}
 ifcnt = 0
+fileifx = open('ifxdef.txt','w') #接口表文件
 
 def createCodeInterface(e,sw,idt,idx):
 	global  interface_defs,ifcnt
 	ifidx = e.ifidx
 	ifcnt+=1
+
+
+	import tce_util
+	ifname = "%s.%s"%(e.container.name,e.name)
+	r = tce_util.getInterfaceIndexWithName(ifname)
+	if r != -1:
+		ifidx = r
+	#--- end
+	e.ifidx = ifidx
+
 
 	interface_defs[ifidx] = {'e':e,'f':{}}
 
@@ -677,6 +688,7 @@ def createCodeInterface(e,sw,idt,idx):
 	sw.writeln("this.adapter = adapter;")
 	sw.writeln('this.index = %s;'%ifidx)
 	for opidx,m in enumerate(e.list): # function list
+		opidx = m.index
 		sw.writeln("this.optlist.put(%s,this.%s);"%(opidx,m.name)) #直接保存 twoway 和 oneway 函数入口
 
 	sw.writeln("this.inst = inst;")
@@ -684,6 +696,7 @@ def createCodeInterface(e,sw,idt,idx):
 
 	#开始委托 函数定义
 	for opidx,m in enumerate(e.list): # function list
+		opidx = m.index
 		sw.writeln('public function %s(ctx:RpcContext = null):Boolean{'%(m.name) ).idt_inc()
 
 		params=[ ]
@@ -820,6 +833,7 @@ def createInterfaceProxy(e,sw,ifidx):
 
 
 	for opidx,m in enumerate(e.list): # function list
+		opidx = m.index
 		sw.wln()
 		params=[]
 

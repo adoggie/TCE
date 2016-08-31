@@ -18,8 +18,12 @@ interface Server extends BaseServer{
 	void bidirection();
 };
 
+struct Tick_t{
+	int tick1;
+};
 
 struct Message_t{
+	Tick_t tick;
 	string sender_id;
 	string issue_time;
 	string content;

@@ -866,6 +866,7 @@ def createProxy(e,sw,ifidx):
 	#-- end destroy()
 	# throws not existed in c# !!!!
 	for opidx,m in enumerate(e.list): # function list
+		opidx = m.index
 		sw.wln()
 		#------------BEGIN TOWAY CALL with timeout ----------------------------------------
 		params=[]
@@ -1228,6 +1229,7 @@ def createProxy(e,sw,ifidx):
 		#	sw.writeln('%s(%s,%s);'%(m.name,'m1.prx','m1.cookie')) #不考虑unmarshall是否okay
 		#	sw.scope_end()
 		#	continue
+		opidx = m.index
 
 		v = sw.newVariant('b')
 		sw.writeln('if( m1.opidx == %s ){'%opidx).idt_inc()
@@ -1286,6 +1288,7 @@ def createProxy(e,sw,ifidx):
 interface_defs={}
 ifcnt = 0
 
+fileifx = open('ifxdef.txt','w') #接口表文件
 def createCodeInterface(e,sw,idt,idx):
 	global  interface_defs,ifcnt
 
@@ -1308,6 +1311,11 @@ def createCodeInterface(e,sw,idt,idx):
 	print 'Interface:%s - Index:%s'%(e.name,ifidx)
 
 	interface_defs[ifidx] = {'e':e,'f':{}}
+
+	fileifx.write('<if id="%s" name="%s.%s"/>\n'%(ifidx,module.name,e.name))
+	fileifx.flush()
+
+	tce_util.rebuildFunctionIndex(e)
 
 	createProxy(e,sw,ifidx)
 	# if not e.delegate_exposed: #是否暴露委托对象,如果需要本地接收远程RPC请求则需要定义filter
@@ -1417,6 +1425,8 @@ def createCodeInterface(e,sw,idt,idx):
 #	sw.writeln('boolean r=false;')
 #	sw.writeln('RpcMessageXML m = (RpcMessageXML)m_;')
 	for opidx,m in enumerate(e.list):
+		opidx = m.index
+
 		sw.writeln('if(m.opidx == %s ){'%opidx).idt_inc()
 		sw.writeln('return func_%s_delegate(m);'%opidx )
 		sw.scope_end()
@@ -1426,6 +1436,7 @@ def createCodeInterface(e,sw,idt,idx):
 
 	#开始委托 函数定义
 	for opidx,m in enumerate(e.list): # function list
+		opidx = m.index
 		sw.writeln('// func: %s'%m.name)
 		sw.writeln('bool func_%s_delegate(RpcMessage m){'%(opidx) ).idt_inc()
 		params=[ ]

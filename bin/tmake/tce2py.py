@@ -590,6 +590,7 @@ def createServantDelegate(e,ifidx,sw):
 	sw.writeln("self.adapter = adapter")
 
 	for opidx,m in enumerate(e.list): # function list
+		opidx = m.index
 		sw.writeln("self.optlist[%s] = self.%s"%(opidx,m.name)) #直接保存 twoway 和 oneway 函数入口
 	sw.wln()
 
@@ -597,6 +598,8 @@ def createServantDelegate(e,ifidx,sw):
 
 	sw.idt_dec().writeln('')
 	for opidx,m in enumerate(e.list): # function list
+		opidx = m.index
+
 		sw.writeln('def %s(self,ctx):'%(m.name) ).idt_inc()
 		sw.writeln('tce.log_debug("callin (%s)")'%m.name)
 		params=[]
@@ -718,6 +721,8 @@ def createCodeInterface(e,ostream,idt,idx):
 	fileifx.write('<if id="%s" name="%s.%s"/>\n'%(ifidx,module.name,e.name))
 	fileifx.flush()
 
+	tce_util.rebuildFunctionIndex(e)
+
 	createServant(e,sw)
 	createServantDelegate(e,ifidx,sw)
 
@@ -766,6 +771,8 @@ def createCodeInterface(e,ostream,idt,idx):
 	#-- end Create()
 
 	for opidx,m in enumerate(e.list): # function list
+		opidx = m.index
+
 		params=[]
 
 		interface_defs[ifidx]['f'][opidx] = m	#记录接口的函数对象
@@ -1204,13 +1211,75 @@ def createCodes():
 
 
 
-lexparser.lang_kws = ['def', 'import', 'from', 'type', 'str', 'int', 'float', 'class']
+
+class LanguagePython(object):
+	language = 'py'
+	class Builtin:
+		@classmethod
+		def defaultValue(cls,this):
+			r = '""'    #  as 'string'
+			if this.type in ('byte','short','int','long','float','double'):
+				r = '0'
+			elif this.type == 'bool':
+				r = 'False'
+			return r
+
+		@classmethod
+		def typeName(cls,this):
+			r = ''
+			return r
+
+
+	class Sequence:
+		@classmethod
+		def defaultValue(cls,this,call_module):
+			if this.type.name == 'byte':
+				return '""'  #
+			return '[]'
+
+		@classmethod
+		def typeName(cls,this,call_module):
+			return ''
+
+
+	class Dictionary:
+		@classmethod
+		def defaultValue(cls,this,call_module):
+			return '{}'
+
+
+		@classmethod
+		def typeName(cls,this,call_module):
+			return ''
+
+
+	class Struct:
+		@classmethod
+		def defaultValue(cls,this,call_module):
+			return 'new %s()'%this.getTypeName(call_module)
+
+		@classmethod
+		def typeName(cls,this,call_module):
+			r = this.name
+			if this.module:
+				r = '%s.%s'%(this.module,this.name)
+			return r
+
+	class Module:
+		def __init__(self,m):
+			self.m = m
+
+
+
+lexparser.lang_kws = ['def', 'import', 'from', 'type', 'str', 'int', 'float', 'class','yield']
 # lexparser.lang_kws = ['def','import','from','int','float','class']
 
 
+lexparser.language = 'py'
+lexparser.codecls = LanguagePython
 
 def usage():
-	howto='''
+	usage='''
 	python tce2py.py -i a.idl,b.idl,.. -o ./
 	'''
 if __name__ =='__main__':
