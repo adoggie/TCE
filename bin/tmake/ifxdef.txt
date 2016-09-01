@@ -1,6 +1,0 @@
-<if id="0" name="webservice.DisplayEnd"/>
-<if id="1" name="Base.DisplayEnd"/>
-<if id="2" name="Test.AudioSample"/>
-<if id="3" name="Test.Parts"/>
-<if id="4" name="Test.Engine"/>
-<if id="5" name="Second.Server"/>

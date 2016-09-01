@@ -1,4 +1,4 @@
-﻿#--coding:utf-8--
+#!/usr/bin/env python
 
 #scott  shanghai china
 #86-13916624477 qq:24509826 msn: socketref@hotmail.com
@@ -55,7 +55,7 @@ class StreamWriter:
 		self.ostream = None
 
 		self.idt = Indent()
-		self.packages =[] #当前包名称
+		self.packages =[] #?????
 		self.includes ={}
 		self.setIncludes('default',[])
 		self.defaultinclude = 'deault'
@@ -168,7 +168,7 @@ class StreamWriter:
 		# 	print 'mkdir:',name
 		# 	os.mkdir(name)
 
-	#进入包空间
+	#?????
 	def pkg_enter(self,name):
 		return
 		# self.packages.append(name)
@@ -243,7 +243,7 @@ class Builtin_Python:
 	@staticmethod
 	def serial2(typ,val,sw,stream):
 		# typ - builtin object ; val - variant name; var = d
-		# val -(NSNumber*) 处理 sequence<nsnumber*>类型
+		# val -(NSNumber*) ?? sequence<nsnumber*>??
 		s=''
 		if typ.type =='byte':
 			sw.writeln('[%s writeByte:[%s unsignedCharValue] ];'%(stream,val))
@@ -288,7 +288,7 @@ class Builtin_Python:
 	@staticmethod
 	def unserial2(typ,val,sw,stream):
 		'''
-			还原到 sequence<nsnumber*>类型
+			??? sequence<nsnumber*>??
 		'''
 
 		s=''
@@ -341,7 +341,7 @@ def createCodeStruct(e,sw,idt):
 	sw.scope_end()
 
 
-	#定义序列化函数
+	#???????
 	sw.wln()
 	sw.resetVariant()
 
@@ -479,7 +479,7 @@ def createCodeSequence(e,sw,idt):
 		sw.define_var(v,e.type.getMappingTypeName2(module),'nil')
 	else:
 		sw.define_var(v,e.type.getMappingTypeName(module),e.type.getTypeDefaultValue(module)  )
-	if isinstance(e.type,Builtin): #无法包装直接的原始数据数组
+	if isinstance(e.type,Builtin): #?????????????
 		Builtin_Python.unserial2(e.type,v,sw,'bar')
 		# sw.writeln("this.ds.add(_o);")
 	elif isinstance( e.type,Sequence) or isinstance(e.type,Dictionary):
@@ -525,7 +525,7 @@ def createCodeSequence(e,sw,idt):
 
 def createCodeDictionary(e,sw,idt):
 	'''
-		<key,val> key 必须是 builtin内建类型
+		<key,val> key ??? builtin????
 	'''
 	if True:
 		module = e.container
@@ -563,7 +563,7 @@ def createCodeDictionary(e,sw,idt):
 		# sw.writeln('public class %shlp {'%e.getName() ).idt_inc()
 		# sw.writeln('//# -- THIS IS DICTIONARY! --')
 		# sw.writeln('public %s ds = null;'%(e.getMappingTypeName(module))).wln()
-		# sw.writeln('public %shlp(%s ds){'%(e.name,e.getMappingTypeName(module)) ).idt_inc()	#将hash数据{}传递进来
+		# sw.writeln('public %shlp(%s ds){'%(e.name,e.getMappingTypeName(module)) ).idt_inc()	#?hash??{}????
 		# sw.writeln('this.ds = ds;')
 		# sw.scope_end()
 		# sw.wln()
@@ -577,7 +577,7 @@ def createCodeDictionary(e,sw,idt):
 		v = sw.newVariant('v')
 		sw.writeln('NSEnumerator * enumerator = [self.data keyEnumerator];')
 
-		# key 必须是内建builtin 类型
+		# key ?????builtin ??
 		sw.define_var(k,e.first.getMappingTypeName2(module))
 		if isinstance(e.second,Builtin):
 			sw.define_var(v,e.second.getMappingTypeName2(module))
@@ -594,7 +594,7 @@ def createCodeDictionary(e,sw,idt):
 		elif isinstance( e.first,Sequence) or isinstance(e.first,Dictionary):
 			print 'error: <KEY> in dictionary not be in [sequence,dictionary]!'
 			sys.exit(0)
-			#key不支持符合数据类型，只能是简单数据类型(Builtin Types)
+			#key???????????????????(Builtin Types)
 		else:
 			sw.writeln("[%s marshall:bar];"%k)
 		# do value
@@ -708,7 +708,7 @@ def createCodeDictionary(e,sw,idt):
 
 
 def createProxy(e,sw,ifidx):
-	# 创建代理
+	# ????
 	module = e.container
 
 	sw.setstream(H_FILE).wln()
@@ -734,7 +734,7 @@ def createProxy(e,sw,ifidx):
 		opidx = m.index
 
 		sw.wln()
-		#		interface_defs[ifidx]['f'][opidx] = m	#记录接口的函数对象
+		#		interface_defs[ifidx]['f'][opidx] = m	#?????????
 		list =[]
 		for n  in range(len(m.params)):
 			p = m.params[n]
@@ -745,7 +745,7 @@ def createProxy(e,sw,ifidx):
 		ss = string.join( list,' ')
 		if ss: ss = ':'+ss
 
-		# 函数定义开始
+		# ??????
 		if m.type.name == 'void': # oneway call
 			if len(m.params) == 0:
 				sw.writeln('-(void) %s_oneway:(NSDictionary*)props;'%(m.name) )
@@ -809,7 +809,7 @@ def createProxy(e,sw,ifidx):
 				list.append('(%s)%s'%(p.type.getMappingTypeName(module),p.id) )
 		ss = string.join( list,' ')
 		if ss: ss = ':'+ss
-		# 函数定义开始
+		# ??????
 		sw.resetVariant()
 		if m.type.name == 'void': # oneway call
 			if len(m.params) ==0:
@@ -895,14 +895,14 @@ def createProxy(e,sw,ifidx):
 		sw.writeln('%s.proxy = self;'%m1)
 		sw.writeln('%s.async = [%s_AsyncCallBack new];'%(m1,e.getName()))
 		sw.writeln('[%s.async setOnSucc:succ];'%m1)
-		sw.writeln('[%s.async setOnError:error];'%m1) 		#设置回调通知函数
+		sw.writeln('[%s.async setOnError:error];'%m1) 		#????????
 		sw.writeln('[self.conn sendMessage:%s];'%m1)
 		sw.scope_end()
 
 	# sw.scope_end() # end class PROXY class END --  '}'
 	# sw.classfile_leave()
 	sw.writeln('@end')
-	#---------------定义 异步调用 基类  --------------------
+	#---------------?? ???? ??  --------------------
 	# sw.setstream(MM_FILE)
 	# sw.wln()
 	# sw.resetVariant()
@@ -953,13 +953,13 @@ def createProxy(e,sw,ifidx):
 					sw.define_var(c,'%shlp*'%m.type.name,'[%shlp new]'%(m.type.name))
 					sw.writeln('%s.data = %s;'%(c,v))
 					sw.writeln('[%s unmarshall: m2.content];'%c)
-		#			sw.writeln('%s(%s,%s);'%(m.name,v,'m1.prx')) # 不考虑unmarshall()是否okay
+		#			sw.writeln('%s(%s,%s);'%(m.name,v,'m1.prx')) # ???unmarshall()??okay
 
 			else:
 	#			sw.define_var(v,m.type.getMappingTypeName(),'new %s()'%m.type.getMappingTypeName())
 				sw.writeln('[%s unmarshall: m2.content];'%v)
 				# sw.writeln('r = %s.unmarshall(d);'%v)
-			# sw.writeln('%s(%s,%s,%s);'%(m.name,v,'m1.prx','m1.cookie')) #不考虑unmarshall是否okay
+			# sw.writeln('%s(%s,%s,%s);'%(m.name,v,'m1.prx','m1.cookie')) #???unmarshall??okay
 			fx = sw.newVariant('fx')
 			sw.writeln('void (^%s)(%s result,RpcProxyBase* proxy,id cookie) = self.onSucc;'%(fx,m.type.getMappingTypeName(module)))
 			sw.writeln('%s(%s,m1.proxy,m1.cookie);'%(fx,v))
@@ -973,14 +973,14 @@ def createProxy(e,sw,ifidx):
 interface_defs={}
 ifcnt = 0
 
-fileifx = open('ifxdef.txt','w') #接口表文件
+fileifx = open('ifxdef.txt','w') #?????
 
 def createCodeInterface(e,sw,idt,idx):
 	global  interface_defs,ifcnt
 
 	ifidx = ifcnt
 	ifcnt+=1
-	# ifidx = e.ifidx #过滤之后的接口索引( 暂停 )
+	# ifidx = e.ifidx #?????????( ?? )
 	module = e.container
 	#-------- index of if-cls from extern setting in file
 	import tce_util
@@ -1002,7 +1002,7 @@ def createCodeInterface(e,sw,idt,idx):
 
 	createProxy(e,sw,ifidx)
 
-	# if not e.delegate_exposed: #是否暴露委托对象,如果需要本地接收远程RPC请求则需要定义filter
+	# if not e.delegate_exposed: #????????,??????????RPC???????filter
 	# 	return
 	expose = tce_util.isExposeDelegateOfInterfaceWithName(ifname)
 	if not expose:
@@ -1046,7 +1046,7 @@ def createCodeInterface(e,sw,idt,idx):
 	sw.writeln('return self.delegate;')
 	sw.scope_end()
 
-	#定义servant 接口函数
+	#??servant ????
 	for m in e.list: # function list
 		sw.wln()
 		params=[]
@@ -1087,7 +1087,7 @@ def createCodeInterface(e,sw,idt,idx):
 	sw.wln()
 	sw.writeln('@property %s servant;'%e.getTypeName(module))
 
-	#实现invoke()接口
+	#??invoke()??
 	sw.wln()
 	sw.writeln('-(void) invoke:(RpcMessage*)m;')
 	sw.wln()
@@ -1114,7 +1114,7 @@ def createCodeInterface(e,sw,idt,idx):
 		sw.scope_end()
 	sw.scope_end()
 
-	#开始委托 函数定义
+	#???? ????
 	for opidx,m in enumerate(e.list): # function list
 		opidx = m.index
 		# sw.writeln('boolean func_%s_delegate(RpcMessage m){'%(m.name) ).idt_inc()
@@ -1191,13 +1191,13 @@ def createCodeInterface(e,sw,idt,idx):
 		sw.writeln('NSLog(@"%@",exception);')
 		sw.scope_end()
 
-		#--单向调用，并无返回
+		#--?????????
 		sw.writeln("if( (%s.calltype & RpcMsgCallType_ONEWAY) !=0 ){"%m1).idt_inc()
-		sw.writeln("return ;") #异步调用不返回等待
+		sw.writeln("return ;") #?????????
 		sw.scope_end()
 
 		sw.wln()
-		#处理返回值
+		#?????
 		# sw.writeln('if(%s == nil){'%cr).idt_inc()
 		# sw.writeln('%s = %s;'%(cr,m.type.getTypeDefaultValue(module)))
 		# sw.scope_end()
@@ -1226,8 +1226,8 @@ def createCodeInterface(e,sw,idt,idx):
 			sw.scope_end()
 
 			if m.type.name !='void':
-		#		sw.writeln("m.sequence = ctx.msg.sequence;") #返回事务号与请求事务号必须一致
-				# 返回值序列化
+		#		sw.writeln("m.sequence = ctx.msg.sequence;") #???????????????
+				# ??????
 				bar = sw.newVariant('bar')
 				sw.writeln('RpcByteArray* %s=[RpcByteArray new];'%bar)
 				if isinstance( m.type ,Builtin ) and m.type.name!='void':
@@ -1306,7 +1306,7 @@ def createCodeFrame(e,idx,sw ):
 		sw.classfile_leave()
 		return
 #
-#	createCodeInterfaceMapping() #创建 链接上接收的Rpc消息 根据其ifx编号分派到对应的接口和函数上去
+#	createCodeInterfaceMapping() #?? ??????Rpc?? ???ifx???????????????
 
 ostream = sys.stdout
 
@@ -1371,7 +1371,7 @@ def createCodes():
 				p = argv.pop(0)
 				file = p
 
-		if p =='-if': # 接口起始下标，如多个module文件并存，则同坐此参数区分开
+		if p =='-if': # ??????????module??????????????
 			if argv:
 				ifcnt = int(argv.pop(0))
 

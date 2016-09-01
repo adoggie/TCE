@@ -1,4 +1,4 @@
-﻿#--coding:utf-8--
+#!/usr/bin/env python
 
 #scott  shanghai china
 #86-13916624477 qq:24509826 msn: socketref@hotmail.com
@@ -116,7 +116,7 @@ class Builtin_Python:
 			# s = "%s += struct.pack('!d',%s)"%(var,val)
 			s = '%s = tce.serial_double(%s,%s)'%(stream,val,stream)
 		elif typ =='string':
-			# 添加4字节头 长度
+			# ??4??? ??
 			# s = "if type(%s) in (type(0),type(0.1)): %s=str(%s)"%(val,val,val) + CR + idt.str()
 			# s+= "if not %s: %s=''"%(val,val) + NEWLINE+idt.str()
 			# s+= 'try:' + NEWLINE +idt.inc().str()
@@ -167,7 +167,7 @@ class Builtin_Python:
 			# s+= NEWLINE + idt.str() + '%s+=8'%idx
 			funx = 'tce.unserial_double'
 		elif typ =='string':
-			#4 字节string长度
+			#4 ??string??
 			# s = "__size, = struct.unpack('!I',%s[%s:%s+4])"%(stream,idx,idx)
 			# s+=NEWLINE + idt.str() + '%s+=4'%idx
 			# s+= NEWLINE + idt.str() + "%s = %s[%s:%s+__size]"%(val,stream,idx,idx)
@@ -383,7 +383,7 @@ def createCodeDictionary(e,ostream,idt):
 	sw.writeln('class %s:'%e.getName() )
 	sw.idt_inc()
 	sw.writeln('# -- THIS IS DICTIONARY! --')
-	sw.writeln('def __init__(self,ds={}):')	#将hash数据{}传递进来
+	sw.writeln('def __init__(self,ds={}):')	#?hash??{}????
 	sw.idt_inc()
 	sw.writeln('self.ds = ds')
 	sw.writeln('')
@@ -441,7 +441,7 @@ def createCodeDictionary(e,ostream,idt):
 	sw.idt_inc()
 	sw.writeln("_size,= struct.unpack('!I',d[idx:idx+4])" )
 	sw.writeln("p = 0")
-	sw.writeln("idx += 4") # hash pair的数量
+	sw.writeln("idx += 4") # hash pair???
 	sw.writeln("while p < _size:")
 	sw.idt_inc()
 	if isinstance(e.first,Builtin):
@@ -513,8 +513,8 @@ def createCodeDictionary(e,ostream,idt):
 
 
 '''
-1.创建 接口类 （服务端dispatch 目标）
-2.创建 接口代理类 prx
+1.?? ??? ????dispatch ???
+2.?? ????? prx
 '''
 
 
@@ -541,7 +541,7 @@ def createServant(e,sw):
 	sw.idt_inc()
 	sw.writeln("# -- INTERFACE -- ")
 
-	#写入对应的delegate 类对象
+	#?????delegate ???
 	sw.writeln("def __init__(self):").idt_inc()
 	sw.writeln('tce.RpcServantBase.__init__(self)')
 
@@ -557,7 +557,7 @@ def createServant(e,sw):
 		s = string.join( params,',')
 		if s: s = ','+s
 		sw.writeln('def %s(self%s,ctx):'%(m.name,s) ).idt_inc()
-		#------------定义默认返回函数----------------------
+		#------------????????----------------------
 
 		if isinstance( m.type ,Builtin ):
 			if m.type.type =='void':
@@ -580,18 +580,18 @@ def createServant(e,sw):
 def createServantDelegate(e,ifidx,sw):
 	global  interface_defs,ifcnt
 	module = e.container
-	#服务对象调用委托
+	#????????
 	idt = sw.idt
 	sw.writeln("class %s_delegate:"%e.getName()).idt_inc()
 	sw.writeln("def __init__(self,inst,adapter,conn=None):").idt_inc()
-	sw.writeln("self.index = %s"%ifidx)	#接口的索引编号
-	sw.writeln("self.optlist={}")  #记录成员函数 索引对应的函数入口
-	sw.writeln("self.id = '' ")  #唯一服务类
+	sw.writeln("self.index = %s"%ifidx)	#???????
+	sw.writeln("self.optlist={}")  #?????? ?????????
+	sw.writeln("self.id = '' ")  #?????
 	sw.writeln("self.adapter = adapter")
 
 	for opidx,m in enumerate(e.list): # function list
 		opidx = m.index
-		sw.writeln("self.optlist[%s] = self.%s"%(opidx,m.name)) #直接保存 twoway 和 oneway 函数入口
+		sw.writeln("self.optlist[%s] = self.%s"%(opidx,m.name)) #???? twoway ? oneway ????
 	sw.wln()
 
 	sw.writeln("self.inst = inst")
@@ -605,7 +605,7 @@ def createServantDelegate(e,ifidx,sw):
 		params=[]
 		sw.writeln("d = ctx.msg.paramstream ")
 		sw.writeln("idx = 0")
-		#防止参数重命名，加上 _p_前缀
+		#?????????? _p_??
 		for p in m.params:
 			if isinstance(p.type,Builtin):
 				s = Builtin_Python.unserial(p.type.type,'_p_'+p.id,'d',idt)
@@ -619,12 +619,12 @@ def createServantDelegate(e,ifidx,sw):
 				else:
 					sw.writeln('container = %s(_p_%s)'%(p.type.getTypeName(module),p.id))
 					sw.writeln('r,idx = container.unmarshall(d,idx)')
-					sw.writeln("if not r: return False") #发起流消息到接口参数的转换失败
+					sw.writeln("if not r: return False") #???????????????
 			elif isinstance(p.type,Dictionary):
 				sw.writeln("_p_%s ={} "%p.id)
 				sw.writeln('container = %s(_p_%s)'%(p.type.getTypeName(module),p.id))
 				sw.writeln('r,idx = container.unmarshall(d,idx)')
-				sw.writeln("if not r: return False") #发起流消息到接口参数的转换失败
+				sw.writeln("if not r: return False") #???????????????
 			else:
 				sw.writeln('_p_%s = %s()'%(p.id,p.type.getTypeName(module)))
 				sw.writeln('r,idx = _p_%s.unmarshall(d,idx)'% p.id )
@@ -668,7 +668,7 @@ def createServantDelegate(e,ifidx,sw):
 
 		sw.writeln("d = '' ")
 		sw.writeln("m = tce.RpcMessageReturn(self.inst)")
-		sw.writeln("m.sequence = ctx.msg.sequence") #返回事务号与请求事务号必须一致
+		sw.writeln("m.sequence = ctx.msg.sequence") #???????????????
 		sw.writeln('m.callmsg = ctx.msg')
 		sw.writeln('m.ifidx = ctx.msg.ifidx')
 		sw.writeln('m.call_id = ctx.msg.call_id')
@@ -696,7 +696,7 @@ def createServantDelegate(e,ifidx,sw):
 		sw.writeln("ctx.conn.sendMessage(m)")
 		sw.writeln("return True").idt_dec().wln()
 
-fileifx = open('ifxdef.txt','w') #接口表文件
+fileifx = open('ifxdef.txt','w') #?????
 
 def createCodeInterface(e,ostream,idt,idx):
 	module = e.container
@@ -730,10 +730,10 @@ def createCodeInterface(e,ostream,idt,idx):
 
 
 	#------------Create Proxy -------------
-	# 创建代理
-	# prx.conn -- 指向网络连接对象 RpcConnection
-	# prx.delta -- 可用于上下文数据传递
-	#void函数类型不支持异步调用
+	# ????
+	# prx.conn -- ???????? RpcConnection
+	# prx.delta -- ??????????
+	#void???????????
 
 	sw.idt_dec()
 	sw.writeln('class %sPrx(tce.RpcProxyBase):'%e.getName() ).idt_inc()
@@ -775,13 +775,13 @@ def createCodeInterface(e,ostream,idt,idx):
 
 		params=[]
 
-		interface_defs[ifidx]['f'][opidx] = m	#记录接口的函数对象
+		interface_defs[ifidx]['f'][opidx] = m	#?????????
 
 
 		for p in m.params:
 			params.append( p.id )
 		s = string.join( params,',')
-		# 函数定义开始
+		# ??????
 		if s: s = ','+s
 
 		sw.writeln('#extra must be map<string,string>')
@@ -827,18 +827,18 @@ def createCodeInterface(e,ostream,idt,idx):
 		sw.writeln("raise tce.RpcException(tce.RpcConsts.RPCERROR_SENDFAILED)")
 		sw.idt_dec()
 
-		#同步调用, 超时等待产生异常
+		#????, ????????
 		sw.writeln("if not timeout: timeout = tce.RpcCommunicator.instance().getRpcCallTimeout()")
 		v2 = sw.newVariant('m')
 		sw.writeln("%s = None"%v2)
 		sw.writeln("try:").idt_inc()
-		sw.writeln("%s = %s.mtx.get(timeout=timeout)"%(v2,v1)).idt_dec() #永远等待，直到链接断开通知取消等待
+		sw.writeln("%s = %s.mtx.get(timeout=timeout)"%(v2,v1)).idt_dec() #?????????????????
 		sw.writeln("except:").idt_inc()
 		sw.writeln("raise tce.RpcException(tce.RpcConsts.RPCERROR_TIMEOUT)").idt_dec()
 
 
-		#如果发送消息 被设置了错误代码，即刻抛出异常，
-		# 错误可能：远端执行错误、连接断开
+		#?????? ????????????????
+		# ????????????????
 		sw.writeln("if %s.errcode != tce.RpcConsts.RPCERROR_SUCC:"%v2).idt_inc()
 		sw.writeln("raise tce.RpcException(%s.errcode)"%v2).idt_dec()
 
@@ -847,7 +847,7 @@ def createCodeInterface(e,ostream,idt,idx):
 
 		if m.type.name != 'void':
 			#sw.writeln("return ").idt_dec()
-			#分解返回值
+			#?????
 			idx = sw.newVariant('idx')
 			p = sw.newVariant('p')
 			r = sw.newVariant('r')
@@ -864,7 +864,7 @@ def createCodeInterface(e,ostream,idt,idx):
 				s = Builtin_Python.unserial(m.type.type,p,d,idt,idx)
 				sw.writeln(s)
 			elif isinstance(m.type,Sequence):
-				if m.type.type.name=='byte': #加速读取sequece字节数组
+				if m.type.type.name=='byte': #????sequece????
 					s = Builtin_Python.unserial('string',p,d,idt,idx)
 					sw.writeln(s)
 				else:
@@ -892,14 +892,14 @@ def createCodeInterface(e,ostream,idt,idx):
 
 		#-----  async call -------------------------------
 		params=[]
-		# if m.type.name !='void': #异步调用接口必须有返回值
+		# if m.type.name !='void': #????????????
 		if True:
 			sw.resetVariant()
 
 			for p in m.params:
 				params.append( p.id )
 			s = string.join( params,',')
-			# 函数定义开始
+			# ??????
 			if s: s = ','+s
 			sw.writeln('def %s_async(self%s,async,cookie=None,extra={}):'%(m.name,s) ).idt_inc()
 			sw.writeln("# function index: %s"%idx).wln()
@@ -946,14 +946,14 @@ def createCodeInterface(e,ostream,idt,idx):
 			sw.idt_dec().wln() #back to def
 
 		#----- end async call ------------------------------
-		# -- 生成 异步调用 函数返回值 解析的函数 ，静态函数
-		# 异步调用返回, void 类型不能异步返回
+		# -- ?? ???? ????? ????? ?????
+		# ??????, void ????????
 		# if m.type.name !='void':
-		if True:    #支持void返回类型的异步调用 async  2013.9.19
+		if True:    #??void????????? async  2013.9.19
 			sw.resetVariant()
 
 			sw.writeln("@staticmethod")
-			# m - 消息发起者 ; m2 - 远端返回消息
+			# m - ????? ; m2 - ??????
 			sw.writeln('def %s_asyncparser(m,m2):'%(m.name,) ).idt_inc()
 			sw.writeln("# function index: %s , m2 - callreturn msg."%idx).wln() #stream,user,prx)
 
@@ -967,9 +967,9 @@ def createCodeInterface(e,ostream,idt,idx):
 			container = sw.newVariant('container')
 
 			sw.writeln("%s = m2.paramstream"%stream)
-			sw.writeln("%s = m.async"%user) # 用户异步接收函数
+			sw.writeln("%s = m.async"%user) # ????????
 			sw.writeln("%s = m.prx"%prx)
-			#出现异常，不进行提示，！！ 也许应该讲错误信息传递给异步接收函数
+			#????????????? ??????????????????
 			sw.writeln("if m2.errcode != tce.RpcConsts.RPCERROR_SUCC: return ") #skipped error
 
 
@@ -998,7 +998,7 @@ def createCodeInterface(e,ostream,idt,idx):
 				sw.writeln('%s = %s()'%(p,m.type.getTypeName(module)))
 				sw.writeln('%s,%s = %s.unmarshall(%s,%s)'%(r,idx,p,d,idx))
 			sw.writeln("if %s:"%r).idt_inc()
-			#反射到用户代码
+			#???????
 			if m.type.name!='void':
 				sw.writeln("%s(%s,%s,m.cookie)"%(user,p,prx)).idt_dec().idt_dec()
 			else:
@@ -1011,8 +1011,8 @@ def createCodeInterface(e,ostream,idt,idx):
 		# ---  END  async callback --
 
 		#--------BEGIN ONEWAY CALL ----------------
-		#-- 创建oneway的调用方法 (无需处理返回等待)
-		# 仅仅 void类型支持单向调用
+		#-- ??oneway????? (????????)
+		# ?? void????????
 
 		if m.type.name =='void':
 			sw.resetVariant()
@@ -1093,7 +1093,7 @@ def createCodeFrame(module,e,idx,ostream ):
 		createCodeStruct(module,e,ostream,idt)
 		return
 
-	# createCodeInterfaceMapping() #创建 链接上接收的Rpc消息 根据其ifx编号分派到对应的接口和函数上去
+	# createCodeInterfaceMapping() #?? ??????Rpc?? ???ifx???????????????
 
 ostream = sys.stdout
 
@@ -1146,7 +1146,7 @@ def createCodes():
 	argv = sys.argv
 	while argv:
 		p = argv.pop(0)
-		if p =='-o':    #输出目录
+		if p =='-o':    #????
 			p = argv.pop(0)
 			outdir = p
 			#f = open(p,'w')
@@ -1155,7 +1155,7 @@ def createCodes():
 			if argv:
 				p = argv.pop(0)
 				file = p
-		if p =='-if': # 接口起始下标，如多个module文件并存，则同坐此参数区分开
+		if p =='-if': # ??????????module??????????????
 			if argv:
 				ifcnt = int(argv.pop(0))
 
@@ -1165,7 +1165,7 @@ def createCodes():
 
 	idlfiles = file.strip().split(',')
 
-	#读入idl定义内容
+	#??idl????
 	# fp = None
 	# content = None
 
@@ -1192,7 +1192,7 @@ def createCodes():
 	# print global_modules_defs
 
 	# for name, module in global_modules_defs.items():
-	#--依次遍历每个module
+	#--??????module
 	for module in global_modules:
 		name = module.name
 		# print 'module:',name,module.ref_modules.keys()

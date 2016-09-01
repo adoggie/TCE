@@ -1,19 +1,19 @@
-﻿#--coding:utf-8--
+#!/usr/bin/env python
 
 #scott  shanghai china
 #86-13916624477 qq:24509826 msn: socketref@hotmail.com
-# 终于到了拿cpp开刀了，哇哈哈
+# ?????cpp???????
 # stl reference: http://msdn.microsoft.com/zh-tw/library/windows/apps/xaml/9h24a8cd
 
-# 注意: 
-# 1. void型函数不支持异步调用  ； 
-# 2. dictionary类型的key必须为 primitive数据类型，不能为struct、sequence、dictionary做key，除非自动生成 < 的比较函数
-# 3. 一个adpater上对应 host+port，且多个module的servant不能加在同一个adaper内（自动生成索引编号引起重复）
-# 后续可以支持 外部输入idx索引起始值来保证不同module的servant在adapter中并存
+# ??: 
+# 1. void??????????  ? 
+# 2. dictionary???key??? primitive????????struct?sequence?dictionary?key??????? < ?????
+# 3. ??adpater??? host+port????module?servant???????adaper???????????????
+# ?????? ????idx??????????module?servant?adapter???
 
 #2012.12.31
-# 1. 增加输出制定接口的idlmaping 代码，防止过多的代码生成
-#    增加过滤文件来制定生成的接口
+# 1. ?????????idlmaping ????????????
+#    ??????????????
 
 import os
 import os.path
@@ -71,7 +71,7 @@ class StreamWriter:
 	def __init__(self,ostream=None,idt=None):
 		self.ostream = ostream
 		self.idt = Indent()
-		self.packages =[] #当前包名称
+		self.packages =[] #?????
 		self.includes ={}
 		self.setIncludes('default',[])
 		self.defaultinclude = 'deault'
@@ -163,7 +163,7 @@ class StreamWriter:
 
 		pass
 
-	#进入包空间
+	#?????
 	def pkg_enter(self,name):
 		self.packages.append(name)
 		self.writeln('#ifndef _%s_H'%name)
@@ -246,7 +246,7 @@ class Builtin_Python:
 		elif typ == 'float': #,'double'):
 			sw.writeln("%s.writeFloat(%s);"%(stream,val) )
 		elif typ =='string':
-			# 添加4字节头 长度
+			# ??4??? ??
 #			sw.writeln("%s.writeInt(%s.size());"%(stream,val))
 			sw.writeln("%s.writeString(%s);"%(stream,val) )
 
@@ -298,7 +298,7 @@ def createCodeStruct(e,sw,idt):
 		v = m.type.getMappingTypeName(e.container)
 		params.append( (m.name,v) )
 	pp =map(lambda x: '%s:%s'%(x[0],x[1]),params)
-	ps = string.join(pp,',') #构造函数默认参数列表
+	ps = string.join(pp,',') #??????????
 
 	l ='struct %s{'%e.getName()
 	sw.writeln(l)
@@ -310,7 +310,7 @@ def createCodeStruct(e,sw,idt):
 		v = m.type.getMappingTypeName(e.container)
 		sw.writeln("%s \t%s;"%(v,m.name))
 
-	sw.writeln("//构造函数")
+	sw.writeln("//????")
 	sw.writeln('%s(){'%(e.getName(),) ).idt_inc()
 	for m in e.list:
 		d = m.type.getTypeDefaultValue(e.container)
@@ -341,7 +341,7 @@ def createCodeStruct(e,sw,idt):
 	sw.wln()
 
 	#unmarshall()
-	sw.writeln(u"//反序列化 unmarshall()".encode('utf-8'))
+	sw.writeln(u"//???? unmarshall()".encode('utf-8'))
 	sw.writeln("bool unmarshall(tce::ByteArray& d){" )
 
 	sw.idt_inc()
@@ -480,7 +480,7 @@ def createCodeDictionary(e,sw,idt):
 	sw.define_var('ds','hash_type&')
 	sw.wln()
 # sw.writeln('ds :HashMap = null;').wln()
-	sw.writeln('%shlp(hash_type & ds_):ds(ds_){'%e.getName() ).idt_inc()	#将hash数据{}传递进来
+	sw.writeln('%shlp(hash_type & ds_):ds(ds_){'%e.getName() ).idt_inc()	#?hash??{}????
 #	sw.writeln('this.ds = ds;')
 	sw.scope_end()
 	sw.wln()
@@ -597,8 +597,8 @@ def createCodeDictionary(e,sw,idt):
 
 
 '''
-1.创建 接口类 （服务端dispatch 目标）
-2.创建 接口代理类 prx
+1.?? ??? ????dispatch ???
+2.?? ????? prx
 '''
 
 def createAsyncCallBack(e,sw):
@@ -620,7 +620,7 @@ def createAsyncCallBack(e,sw):
 def createFunc_AsyncParserHlp(e,sw,m,idx,ifidx,opidx):
 	sw.wln()
 	#------------ AsyncParser_hlp  ---------
-	if m.type.name =='void': # void 返回类型不能异步
+	if m.type.name =='void': # void ????????
 		return
 	sw.writeln('private:')
 	sw.writeln('static void %s_asyncparser_hlp(tce::RpcMessage* m,tce::RpcMessage* m2){'%m.name).idt_inc()
@@ -635,10 +635,10 @@ def createFunc_AsyncParser(e,sw,m,idx,ifidx,opidx):
 	
 	idt = sw.idt
 	#------------ AsyncParser  ---------
-	if m.type.name =='void': # void 返回类型不能异步
+	if m.type.name =='void': # void ????????
 		return
 
-	# -- 生成 异步调用 函数返回值 解析的函数 ，静态函数
+	# -- ?? ???? ????? ????? ?????
 	sw.writeln('void %s_asyncparser(tce::RpcMessage* m_,tce::RpcMessage* m2_){'%(m.name,) ).idt_inc()
 	sw.writeln("//# function index: %s , m2 - callreturn msg."%idx).wln() #stream,user,prx)
 	sw.writeln('tce::RpcMessage* m = m_;')
@@ -648,12 +648,12 @@ def createFunc_AsyncParser(e,sw,m,idx,ifidx,opidx):
 		sw.define_var('stream','tce::ByteArray&','m2->paramstream')
 
 		sw.define_var('user','%s_AsyncCallBack*'%e.getName(),'(%s_AsyncCallBack*)'%e.getName()+'m->async')
-		#出现异常，不进行提示，！！ 也许应该讲错误信息传递给异步接收函数
-		#有异常根本不会跑进这里
+		#????????????? ??????????????????
+		#???????????
 
-		#void 类型调用返回
+		#void ??????
 
-		sw.writeln("if(stream.size() == 0){ ").idt_inc() #参数为空，表示return is 'void'
+		sw.writeln("if(stream.size() == 0){ ").idt_inc() #???????return is 'void'
 #		sw.writeln("user->%s(this);"%m.name) # void return
 		sw.writeln("return;")
 		sw.scope_end()
@@ -705,17 +705,17 @@ def createFunc_Twoway(e,sw,m,idx,ifidx,opidx):
 	#			params.append( p.id,p.type.getMappingTypeName())
 		list.append('%s %s'%(p.type.getMappingTypeName(e.container),p.id) )
 	s = string.join( list,',')
-	# 函数定义开始
+	# ??????
 	if s: s = s + ','
 
 	oneway = ',bool oneway=false'
 	type = 'void'
 	if m.type.name !='void':
 		type = m.type.getMappingTypeName(e.container)
-		oneway='' #返回类型不为void，不能声明oneway
+		oneway='' #??????void?????oneway
 
 
-	#阻塞或者超时调用
+	#????????
 	sw.writeln('%s %s(%sunsigned int timeout = 0,const tce::RpcProperites_t& props=tce::RpcProperites_t()) throw(tce::RpcException){'%(type,m.name,s) ).idt_inc()
 
 	sw.writeln("//# function index: %s"%idx).wln()
@@ -725,11 +725,11 @@ def createFunc_Twoway(e,sw,m,idx,ifidx,opidx):
 	sw.writeln("m->ifidx = %s;"%ifidx)
 	sw.writeln("m->opidx = %s;"%opidx)
 	sw.writeln('m->timeout = timeout;')
-	sw.writeln('m->issuetime = tce::RpcCommunicator::instance().currentTimeStamp(); ') # 用于垃圾回收判别回收时间
+	sw.writeln('m->issuetime = tce::RpcCommunicator::instance().currentTimeStamp(); ') # ????????????
 	sw.writeln("m->paramsize = %s;"%len(m.params) )
 	sw.writeln('m->call_id = tce::RpcCommunicator::instance().localServiceId();')
 	sw.writeln('m->extra.set(props);')
-	#默认为 twoway
+	#??? twoway
 	#sw.writeln('m->calltype = tce::RpcMessage::')
 
 	sw.define_var('_d(new tce::ByteArray)','boost::shared_ptr<tce::ByteArray>')
@@ -758,13 +758,13 @@ def createFunc_Twoway(e,sw,m,idx,ifidx,opidx):
 	sw.writeln("if( !this->conn->sendMessage(m) ){").idt_inc()
 	sw.writeln('throw  tce::RpcException(tce::RpcConsts::RPCERROR_SENDFAILED);')
 	sw.scope_end()
-	#等待返回 超时
+	#???? ??
 	sw.writeln('boost::shared_ptr<tce::RpcMessage> mr = m->wait->waitObject(timeout);')
 	sw.writeln('if(m->exception.get()){').idt_inc()
-	sw.writeln('throw *m->exception;') # 1. 网络丢失 ； 2. 远端异常错误返回
+	sw.writeln('throw *m->exception;') # 1. ???? ? 2. ????????
 	sw.scope_end()
 
-	sw.writeln('if(!mr.get()){').idt_inc() #超时异常
+	sw.writeln('if(!mr.get()){').idt_inc() #????
 	sw.writeln('throw tce::RpcException(tce::RpcConsts::RPCERROR_TIMEOUT);')
 	sw.scope_end()
 
@@ -804,15 +804,15 @@ def createFunc_Oneway(e,sw,m,idx,ifidx,opidx):
 	for p in m.params:
 		list.append('%s %s'%(p.type.getMappingTypeName(e.container),p.id) )
 	s = string.join( list,',')
-	# 函数定义开始
+	# ??????
 	if s: s = s + ','
 
 #	if m.type.name =='void':
 #		return
 #		type = m.type.getMappingTypeName()
-#		oneway='' #返回类型不为void，不能声明oneway
+#		oneway='' #??????void?????oneway
 
-	#阻塞或者超时调用
+	#????????
 	sw.writeln('void %s_oneway(%sconst tce::RpcProperites_t& props=tce::RpcProperites_t()) throw(tce::RpcException){'%(m.name,s) ).idt_inc()
 	sw.writeln("//# function index: %s"%idx).wln()
 	sw.define_var('m(new tce::RpcMessageCall( tce::RpcMessage::ONEWAY) )',
@@ -821,7 +821,7 @@ def createFunc_Oneway(e,sw,m,idx,ifidx,opidx):
 	sw.writeln("m->ifidx = %s;"%ifidx)
 	sw.writeln("m->opidx = %s;"%opidx)
 #	sw.writeln('m->timeout = timeout;')
-	sw.writeln('m->issuetime = tce::RpcCommunicator::instance().currentTimeStamp(); ') # 用于垃圾回收判别回收时间
+	sw.writeln('m->issuetime = tce::RpcCommunicator::instance().currentTimeStamp(); ') # ????????????
 
 	sw.writeln("m->paramsize = %s;"%len(m.params) )
 	sw.writeln('m->call_id = tce::RpcCommunicator::instance().localServiceId();')
@@ -861,24 +861,24 @@ def createFunc_Async(e,sw,m,idx,ifidx,opidx):
 	list =[]
 	idt = sw.idt
 	
-	if m.type.name =='void': # void 返回类型不能异步
+	if m.type.name =='void': # void ????????
 		return
 	sw.writeln('public:')
 	sw.wln()
 	for p in m.params:
 		list.append('%s %s'%(p.type.getMappingTypeName(e.container),p.id) )
 	s = string.join( list,',')
-	# 函数定义开始
+	# ??????
 	if s: s = s + ','
 
-	#阻塞或者超时调用
+	#????????
 	sw.writeln('void %s(%s%s_AsyncCallBack* async,const tce::RpcProperites_t& props=tce::RpcProperites_t()) throw(tce::RpcException){'%(m.name,s,e.name) ).idt_inc()
 	sw.writeln("//# function index: %s"%idx).wln()
 	sw.define_var('m(new tce::RpcMessageCall(tce::RpcMessage::ASYNC))','boost::shared_ptr<tce::RpcMessageCall>')
 
 	sw.writeln("m->ifidx = %s;"%ifidx)
 	sw.writeln("m->opidx = %s;"%opidx)
-	sw.writeln('m->issuetime = tce::RpcCommunicator::instance().currentTimeStamp(); ') # 用于垃圾回收判别回收时间
+	sw.writeln('m->issuetime = tce::RpcCommunicator::instance().currentTimeStamp(); ') # ????????????
 	sw.writeln("m->paramsize = %s;"%len(m.params) )
 	sw.writeln('m->call_id = tce::RpcCommunicator::instance().localServiceId();')
 	sw.writeln('m->extra.set(props);')
@@ -922,7 +922,7 @@ def createServantDelegate(e,sw,idx,ifidx):
 	idt = sw.idt
 	sw.classfile_enter("%s_delegate"%e.getName())
 	sw.wln()
-	#服务对象调用委托
+	#????????
 	sw.writeln("class %s_delegate:public tce::RpcServantDelegate {"%e.getName()).idt_inc()
 
 	sw.wln()
@@ -944,12 +944,12 @@ def createServantDelegate(e,sw,idx,ifidx):
 
 	for opidx,m in enumerate(e.list): # function list
 		opidx = m.index
-		sw.writeln("this->_optlist[%s] = &%s_delegate::%s_dummy;"%(opidx,e.getName(),m.name)) #直接保存 twoway 和 oneway 函数入口
+		sw.writeln("this->_optlist[%s] = &%s_delegate::%s_dummy;"%(opidx,e.getName(),m.name)) #???? twoway ? oneway ????
 
 	sw.writeln("this->inst = inst;")
 	sw.scope_end().wln()
 
-	#开始委托 函数定义
+	#???? ????
 	for opidx,m in enumerate(e.list): # function list
 		opidx = m.index
 		sw.writeln('static bool %s_dummy(tce::RpcContext& ctx){'%(m.name) ).idt_inc()
@@ -965,7 +965,7 @@ def createServantDelegate(e,sw,idx,ifidx):
 		#		sw.writeln("d = ctx.msg.paramstream; ")
 		sw.writeln('bool r = false;')
 		#sw.writeln("idx = 0")
-		#防止参数重命名，加上 _p_前缀
+		#?????????? _p_??
 		sw.writeln('r = false;')
 		for p in m.params:
 			if isinstance(p.type,Builtin):
@@ -1007,7 +1007,7 @@ def createServantDelegate(e,sw,idx,ifidx):
 		#sw.define_var('d','tce::ByteArray&','*_d')
 		#sw.writeln('d = *_d;')
 		sw.define_var('m(new tce::RpcMessageReturn)','boost::shared_ptr<tce::RpcMessageReturn>')
-		sw.writeln("m->sequence = ctx.msg->sequence;") #返回事务号与请求事务号必须一致
+		sw.writeln("m->sequence = ctx.msg->sequence;") #???????????????
 		sw.writeln("m->ifidx = ctx.msg->ifidx;")
 		sw.writeln("m->call_id = ctx.msg->call_id;")
 		sw.writeln("m->conn = ctx.conn;")
@@ -1048,7 +1048,7 @@ def createServant(e,sw,idx,ifidx):
 #	sw.writeln("~%s(){}"%e.getName() ).idt_inc()
 	sw.writeln('public:').wln()
 	sw.writeln("boost::shared_ptr<%s_delegate> delegate;"%e.getName())
-	#写入对应的delegate 类对象
+	#?????delegate ???
 
 	sw.writeln("%s();"%(e.getName(),) )
 #	sw.writeln('this.delegate = boost::shared_ptr<%s_delegate>( new %s_delegate(this) );'%(e.getName(),e.getName() ))
@@ -1081,7 +1081,7 @@ def createServant(e,sw,idx,ifidx):
 		if s: s += ','
 		#		retype = 'std::map<%s,%s>'%m.type.first
 		sw.writeln('virtual %s %s(%stce::RpcContext& ctx){'%(m.type.getMappingTypeName(e.container) ,m.name,s) ).idt_inc()
-		#------------定义默认返回函数----------------------
+		#------------????????----------------------
 
 		if isinstance( m.type ,Builtin ):
 			if m.type.type =='void':
@@ -1115,7 +1115,7 @@ def createServant(e,sw,idx,ifidx):
 interface_defs={}
 ifcnt = 0
 
-fileifx = open('ifxdef.txt','w') #接口表文件
+fileifx = open('ifxdef.txt','w') #?????
 def createCodeInterface(e,sw,idt,idx):
 	global  interface_defs,ifcnt
 	ifidx = ifcnt
@@ -1175,7 +1175,7 @@ def createCodeInterface(e,sw,idt,idx):
 		opidx = m.index
 
 		sw.wln()
-		interface_defs[ifidx]['f'][opidx] = m	#记录接口的函数对象
+		interface_defs[ifidx]['f'][opidx] = m	#?????????
 
 		createFunc_Twoway(e,sw,m,idx,ifidx,opidx)
 		createFunc_Async(e,sw,m,idx,ifidx,opidx)
@@ -1190,8 +1190,8 @@ def createCodeInterface(e,sw,idt,idx):
 	
 	sw.wln()
 	
-	#异步连接始终返回true,除非uri参数格式错误，之后需要通过 connection::isConnected()去检测状态
-	sw.writeln('// async 返回的链接状态 ')
+	#????????true,??uri????????????? connection::isConnected()?????
+	sw.writeln('// async ??????? ')
 	sw.writeln('static %sPrxPtr create(const std::string& uri,tce::RpcConnection::Types conntype=tce::RpcConnection::SOCKET, bool sync=false,const tce::Properties_t& props = tce::Properties_t()){'%(e.getName()) ).idt_inc()
 	sw.writeln('tce::RpcConnectionPtr conn ;')
 	sw.writeln('conn = tce::RpcCommunicator::instance().createConnection(conntype,uri,props);')
@@ -1207,16 +1207,16 @@ def createCodeInterface(e,sw,idt,idx):
 #	sw.classfile_leave()
 
 
-	# --  begin 异步调用 ---
+	# --  begin ???? ---
 
-	# --  end 异步调用 ---
+	# --  end ???? ---
 
 
 
 	return
 #
 '''
-伪代码
+???
 
 def
 
@@ -1260,7 +1260,7 @@ def createCodeFrame(e,idx,sw ):
 		sw.classfile_leave()
 		return
 #
-#	createCodeInterfaceMapping() #创建 链接上接收的Rpc消息 根据其ifx编号分派到对应的接口和函数上去
+#	createCodeInterfaceMapping() #?? ??????Rpc?? ???ifx???????????????
 
 ostream = sys.stdout
 
@@ -1401,15 +1401,15 @@ def createCodes():
 				p = argv.pop(0)
 				file = p
 
-		if p =='-if': # 接口起始下标，如多个module文件并存，则同坐此参数区分开
+		if p =='-if': # ??????????module??????????????
 			if argv:
 				ifcnt = int(argv.pop(0))
 
-		#过滤，仅仅生成指定的接口代码
-		# 接口名称以空格分隔
-		# 接口名称尾部添加 + - 表示是否生成接口的服务器实现代码
+		#??????????????
+		# ?????????
+		# ???????? + - ????????????????
 		# "A+,B-,C-,D"
-		# 未有+ - 默认为+
+		# ??+ - ???+
 		if p =='-filter':
 			if argv:
 				filters = argv.pop(0)
@@ -1420,7 +1420,7 @@ def createCodes():
 	content = fp.read()
 	fp.close()
 
-	#默认采用idl文件名称
+	#????idl????
 	if not outfile:
 		outfile = file
 
@@ -1550,7 +1550,7 @@ class LanguageCPlusPlus(object):
 			self.m = m
 
 lexparser.language = 'cpp'
-lexparser.arch = '64' # 64位操作系统
+lexparser.arch = '64' # 64?????
 
 lexparser.lang_kws = ['for', 'namespace','float',
 					  'new', 'class',  'public','protected','private','struct',
