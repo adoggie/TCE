@@ -7,13 +7,14 @@ setup(
 	name='tcelib',
 	version='0.1.0',
 	packages = find_packages(),
-	zip_safe = False,
-	description='tce2',
-	long_description='tiny communication engine',
+	# zip_safe = False,
+	description='tce for python',
+	# long_description='tiny communication engine',
 	author='scott',
-	author_email='24509826@qq.com',
-	keywords=('tce','rpc'),
-	platforms='Independant',
-	url=''
+	author_email='socketref@hotmail.com',
+	# keywords=('tce','rpc'),
+	# platforms='Independant',
+	url='',
+	install_requires = ['gevent'],
 
 )
