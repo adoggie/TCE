@@ -1,0 +1,4 @@
+G:\github\TCE\test\csharp\simple\simple\bin\Debug\simple.exe
+G:\github\TCE\test\csharp\simple\simple\bin\Debug\simple.pdb
+G:\github\TCE\test\csharp\simple\simple\obj\x86\Debug\simple.exe
+G:\github\TCE\test\csharp\simple\simple\obj\x86\Debug\simple.pdb

@@ -1,0 +1,4 @@
+<if id="0" name="test.BaseServer"/>
+<if id="1" name="test.ITerminalGatewayServer"/>
+<if id="2" name="test.Server"/>
+<if id="3" name="test.ITerminal"/>
