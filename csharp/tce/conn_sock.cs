@@ -51,6 +51,7 @@ namespace Tce {
             if (_sock != null) {
                 _sock.Close();
             }
+            _sock = null;
         }
 
         bool connect() {
@@ -61,11 +62,10 @@ namespace Tce {
                 _sock.Connect( new IPEndPoint(addr,_ep.port)); // it should be non-blocked, add in later.
                 _thread = new Thread( run);
                 _thread.Start();  // launch one thread for data recieving .
-               
+                r = true;
             }
             catch {
-                _sock = null;
-
+                _sock = null;               
             }
             return r;
         }
@@ -84,7 +84,7 @@ namespace Tce {
         }
 
         protected override void onDisconnected() {
-            
+            close();
         }
 
         protected override bool sendDetail(RpcMessage m) {
@@ -100,9 +100,31 @@ namespace Tce {
                     m.extra.setPropertyValue("__device_id__", RpcCommunicator.getSystemDeviceID());
                 }
             }
+
+            byte[] body = null;
+            body = ((MemoryStream) m.marshall()).ToArray();
+            byte[] hdr = createMetaPacketHeader(body.Length);
+            _sock.Send(hdr);
+            _sock.Send(body);
             _sent_num++;
 
             return true;
+        }
+
+        private byte[] createMetaPacketHeader(int msg_size) {
+            byte[] hdrbBytes = null;
+            MemoryStream stream =new MemoryStream();
+            BinaryWriter writer =new BinaryWriter(stream);
+            unchecked {
+                writer.Write((uint)IPAddress.HostToNetworkOrder((int)PACKET_META_MAGIC));    
+            }
+            
+            writer.Write((uint)IPAddress.HostToNetworkOrder(msg_size + META_PACKET_HDR_SIZE-4));
+            writer.Write((byte)RpcConstValue.COMPRESS_NONE);
+            writer.Write((byte)RpcConstValue.ENCRYPT_NONE);
+            writer.Write((uint)IPAddress.HostToNetworkOrder(VERSION) );
+            hdrbBytes = stream.ToArray();
+            return hdrbBytes;
         }
 
         class ReturnValue {
@@ -136,11 +158,11 @@ namespace Tce {
                 if (size < META_PACKET_HDR_SIZE) {
                     return new ReturnValue(ReturnValue.NEED_MORE, msglist, stream);                    
                 }
-                uint magic = (uint)IPAddress.NetworkToHostOrder(reader.ReadUInt32());
-                uint pktsize = (uint) IPAddress.NetworkToHostOrder(reader.ReadUInt32());
+                uint magic = (uint)IPAddress.NetworkToHostOrder(reader.ReadInt32());
+                uint pktsize = (uint) IPAddress.NetworkToHostOrder(reader.ReadInt32());
                 byte compress = reader.ReadByte();
                 byte encrypt = reader.ReadByte();
-                uint version = (uint) IPAddress.NetworkToHostOrder(reader.ReadUInt32());
+                uint version = (uint) IPAddress.NetworkToHostOrder(reader.ReadInt32());
                 if (magic != PACKET_META_MAGIC) {
                     return new ReturnValue(ReturnValue.DATA_DIRTY, msglist, stream);
                 }
@@ -169,6 +191,7 @@ namespace Tce {
                 if (m == null) {
                     return new ReturnValue(ReturnValue.DATA_DIRTY, msglist, stream);
                 }
+                m.conn = this;
                 msglist.Add(m);
             }
             return new ReturnValue(ReturnValue.SUCC,msglist,stream);
@@ -185,13 +208,14 @@ namespace Tce {
                 while (true) {
                     int size = _sock.Receive(bytes);
                     if (size > 0) {
+                        stream.Seek(0, SeekOrigin.End);
                         stream.Write(bytes, 0, size);
                     }
                     else {
                         break;
                     }
                     List<MemoryStream> streamlist = new List<MemoryStream>();
-
+                    stream.Seek(0, SeekOrigin.Begin);
                     ReturnValue rv = parsePacket(stream);
                     if (rv.code == ReturnValue.DATA_DIRTY) {
                         this.close(); // destroy the socket , connection be lost.

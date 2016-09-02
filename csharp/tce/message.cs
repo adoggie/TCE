@@ -56,6 +56,7 @@ namespace Tce {
                 m.opidx = RpcBinarySerializer.readShort(reader);
                 m.errcode = RpcBinarySerializer.readInt(reader);
                 m.paramsize = RpcBinarySerializer.readByte(reader);
+                m.call_id = RpcBinarySerializer.readShort(reader);
                 if (m.extra.unmarshall(stream) == false) {
                     return null;
                 }

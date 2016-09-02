@@ -12,7 +12,7 @@ namespace Tce {
         public class Settings {
             public string name ="";     // server name 
             public int threadNum = 1; // 默认启动 1 条处理线程
-            public int callwait = 1000*30;
+            public int callwait = 1000*30000;
         }
 
         private int _sequence = 0;
@@ -39,10 +39,12 @@ namespace Tce {
             return RpcCommunicator._handle;
         }
 
-        public bool initialize(Settings settings) {
-            _settings = settings;
-            _dispatcher =new RpcMessageDispatcher(this,settings.threadNum);
-
+        public bool initialize(string name,Settings settings=null) {
+            if (settings != null) {
+                _settings = settings;
+            }
+            _dispatcher =new RpcMessageDispatcher(this,_settings.threadNum);
+            _dispatcher.open();
             return true;
         }
 
@@ -87,15 +89,19 @@ namespace Tce {
         }
 
         public void waitForShutdown() {
-            _dispatcher.close();
+           
             _dispatcher.join();
             foreach (KeyValuePair<string, RpcAdapter> kv in _adapters) {
+                kv.Value.join();
                 kv.Value.close();
             }
         }
 
         public void shudown() {
-            
+            _dispatcher.close();
+            foreach (KeyValuePair<string, RpcAdapter> kv in _adapters){                
+                kv.Value.close();
+            }
         }
 
         public RpcAdapter createAdapterWithProxy(String id, RpcProxyBase proxy){

@@ -42,7 +42,7 @@ namespace Tce {
             {
                 for (int n = 0; n < _threadNum; n++)
                 {
-                    ThreadStart threadDelegate = new ThreadStart(threadMessageProcess);
+                    ThreadStart threadDelegate = new ThreadStart(this.threadMessageProcess);
                     Thread thread = new Thread(threadDelegate);
                     thread.Start();
                     _threads.Add(thread);
@@ -95,6 +95,7 @@ namespace Tce {
         public void  dispatchMsg(RpcMessage m) {
             lock (_messages) {
                 _messages.Add(m);
+                _read_ev.Set();
             }
         }
 

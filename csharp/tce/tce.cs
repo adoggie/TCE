@@ -4,7 +4,7 @@ using System;
 namespace Tce {
 
     class RpcConstValue {
-        public const int COMPRESS_ONE = 0;
+        public const int COMPRESS_NONE = 0;
         public const int COMPRESS_ZLIB = 1;
         public const int COMPRESS_BZIP2 = 2;
         

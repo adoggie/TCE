@@ -23,8 +23,7 @@ namespace Tce {
 
         public static void writeString(string value, BinaryWriter writer) {
             UTF8Encoding utf8 = new UTF8Encoding();
-            int len = utf8.GetByteCount(value);
-            len = IPAddress.HostToNetworkOrder(len);
+            int len = utf8.GetByteCount(value);            
             writeInt(len,writer);
             writer.Write( utf8.GetBytes(value));
         }
@@ -76,7 +75,7 @@ namespace Tce {
 
         public static float readFloat(BinaryReader reader) {
             byte[] bytes = reader.ReadBytes(4);
-            float value = BitConverter.ToSingle(bytes, 0);
+            float value = BitConverter.ToSingle(bytes, 0);  
             return value;
         }
 

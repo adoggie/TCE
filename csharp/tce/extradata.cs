@@ -21,9 +21,7 @@ namespace Tce {
                 }
                 RpcBinarySerializer.writeInt(_props.Count,writer);
                 foreach (KeyValuePair<string, string> kv in _props) {
-                    RpcBinarySerializer.writeInt(kv.Key.Length,writer);
                     RpcBinarySerializer.writeString(kv.Key,writer);
-                    RpcBinarySerializer.writeInt(kv.Value.Length,writer);
                     RpcBinarySerializer.writeString(kv.Value,writer);
                 }
             }

@@ -102,7 +102,12 @@ namespace Tce
 
         public void close() {
             if (_dispatcher != null) {
-                _dispatcher.close();
+                _dispatcher.close();               
+            }
+        }
+
+        public void join() {
+            if (_dispatcher != null){                
                 _dispatcher.join();
             }
         }
