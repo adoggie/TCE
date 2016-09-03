@@ -224,7 +224,9 @@ namespace Tce {
                     }
 
                     BinaryReader reader = new BinaryReader(stream);
-                    stream = new MemoryStream(reader.ReadBytes( (int)(stream.Length - stream.Position))); 
+                    byte[] remains = reader.ReadBytes((int) (stream.Length - stream.Position));
+                    stream = new MemoryStream();
+                    stream.Write(remains,0,remains.Length);
                         // left bytes be picked out .
                     foreach (RpcMessage m in rv.msglist) {
                         this.onMessage(m);

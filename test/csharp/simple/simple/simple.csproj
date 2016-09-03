@@ -57,7 +57,7 @@
     <Compile Include="tce\loging.cs" />
     <Compile Include="tce\message.cs" />
     <Compile Include="tce\message_dispatcher.cs" />
-    <Compile Include="tce\Program.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="tce\proxy.cs" />
     <Compile Include="tce\serialize.cs" />

@@ -52,6 +52,11 @@ namespace Tce {
 
         protected RpcConnection(RpcAdapter adapter = null) {
             this.adapter = adapter;
+            RpcCommunicator.instance().registerConnection(this);
+        }
+
+        ~RpcConnection() {
+            RpcCommunicator.instance().unregisterConnection(this);
         }
 
         public RpcConnectionAcceptor acceptor {

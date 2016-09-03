@@ -12,7 +12,7 @@ namespace Tce {
         public class Settings {
             public string name ="";     // server name 
             public int threadNum = 1; // 默认启动 1 条处理线程
-            public int callwait = 1000*30000;
+            public int callwait = 1000*30;
         }
 
         private int _sequence = 0;
@@ -23,9 +23,14 @@ namespace Tce {
         private RpcMessageDispatcher _dispatcher;
         private Dictionary<int, RpcMessage> _cachedMsgList = new Dictionary<int, RpcMessage>();
         private Settings _settings = new Settings();
+        private List<RpcConnection> _conns = new List<RpcConnection>();
 
         RpcCommunicator() : base("communicator") {
             
+        }
+
+        public Settings settings{
+            get { return _settings; }
         }
 
         public static string getSystemDeviceID() {
@@ -97,7 +102,12 @@ namespace Tce {
             }
         }
 
-        public void shudown() {
+        public void shutdown() {
+            lock (_conns) {
+                foreach (RpcConnection conn in _conns) {
+                    conn.close();
+                }
+            }
             _dispatcher.close();
             foreach (KeyValuePair<string, RpcAdapter> kv in _adapters){                
                 kv.Value.close();
@@ -145,6 +155,20 @@ namespace Tce {
 
         public int getProperty_DefaultCallWaitTime(){
             return  _settings.callwait;
+        }
+
+        public  void registerConnection(RpcConnection conn) {
+            lock (_conns) {
+                if (!_conns.Contains(conn)) {
+                    _conns.Add(conn);
+                }
+            }
+        }
+
+        public void unregisterConnection(RpcConnection conn) {
+            lock (_conns) {
+                _conns.Remove(conn);
+            }
         }
 	
     }
