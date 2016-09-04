@@ -50,6 +50,21 @@ namespace Tce
             _id = id;
         }
 
+        public void addConnectionAcceptor(RpcConnectionAcceptor acceptor) {
+            lock (_acceptors) {
+                if (!_acceptors.Contains(acceptor)) {
+                    acceptor.adapter = this;
+                    _acceptors.Add(acceptor);
+                }
+            }
+        }
+
+        public void removeConnectionAcceptor(RpcConnectionAcceptor acceptor) {
+            lock (_acceptors) {
+                _acceptors.Remove(acceptor);
+                acceptor.adapter = null;
+            }
+        }
 
         //打开服务接收远端连接进入,可以是真实的本地端点设备，或者是伪设备连接
          //目前adapter仅仅处理client端，server模式暂不提供，故不会有Accptor的存在
@@ -64,15 +79,25 @@ namespace Tce
        // }
 
         /**
-         *  addConnection()
+         *  attachConnection()
          * 添加连接到adapter，连接上传递进入的rpc请求将在本adapter内的所有servant对象上传递
-         * 
+         *  应用于NAT后端的客户app发起与server的连接，并将连接关联到本地adapter，以便实现rpc服务的本地提供
          */
-        public RpcAdapter addConnection(RpcConnection conn) {
-            if (!_conns.Contains(conn)) {
-                _conns.Add(conn);    
-            }            
+        public RpcAdapter attachConnection(RpcConnection conn) {
+            lock (_conns) {
+                if (!_conns.Contains(conn)) {
+                    _conns.Add(conn);
+                    conn.adapter = this;
+                }
+            }
             return this;
+        }
+
+        public void detachConnection(RpcConnection conn) {
+            lock (_conns) {
+                _conns.Remove(conn);
+                conn.adapter = null;
+            }
         }
 
         public RpcAdapter addServant(RpcServant servant) {
@@ -86,10 +111,10 @@ namespace Tce
          * 打开本地通信端点，用于接收远程客户连接到达
          *  (server end) 
          */
-        public RpcConnection openEndpoint(RpcEndpoint ep) {
+        //public RpcConnection openEndpoint(RpcEndpoint ep) {
 
-            return null;
-        }
+        //    return null;
+        //}
 
         public bool open() {
             bool succ = false;
@@ -97,10 +122,28 @@ namespace Tce
                 _dispatcher = new RpcMessageDispatcher(this, _settings.threadNum);
                 succ = _dispatcher.open();
             }
+
+            // if acceptor has not opened, then do open. 
+            lock (_acceptors) {
+                foreach (RpcConnectionAcceptor acceptor in _acceptors) {
+                    if (acceptor.isOpen == false) {
+                        if (!acceptor.open()) {
+                            RpcCommunicator.instance()
+                                .logger.error("open connection acctor failed! " + acceptor.ToString());
+                        }
+                    }
+                }                
+            }
             return succ;
         }
 
         public void close() {
+            lock (_acceptors) {
+                foreach (RpcConnectionAcceptor acceptor in _acceptors) {
+                    acceptor.close(); //  it should block thread until it exit exactly.
+                    acceptor.adapter = null;
+                }
+            }
             if (_dispatcher != null) {
                 _dispatcher.close();               
             }

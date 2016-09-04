@@ -21,7 +21,7 @@ namespace simple
         private ServerProxy prx = null;
 
         void bidirection() {
-            
+            prx.bidirection_oneway();
         }
 
         void two_way() {
@@ -54,14 +54,23 @@ namespace simple
 
             RpcAdapter adapter = RpcCommunicator.instance().createAdapter("adapter1");
             prx = ServerProxy.create("192.168.199.235", 16005, false);
+            TerminalImpl impl = new TerminalImpl();
+            adapter.attachConnection(prx.conn);
+            adapter.addServant(impl);
+
         }
 
         static void Main(string[] args) {
             Program program = new Program();
             program.init();
-            program.two_way();
-            program.one_way();
-            program.async_call();
+            for (int n = 0; n < 1000; n++) {
+                program.two_way();
+                program.one_way();
+                program.async_call();
+                program.bidirection();
+
+                System.Threading.Thread.Sleep(1000);
+            }
             RpcCommunicator.instance().waitForShutdown();
             
         }

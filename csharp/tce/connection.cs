@@ -4,33 +4,6 @@ using System.Collections.Generic;
 
 namespace Tce {
 
-    /**
-     * listen and accept 
-     * 处理本地连接进入
-     */
-   public  class RpcConnectionAcceptor {
-        protected RpcEndpoint _ep;
-
-        protected RpcConnectionAcceptor() {
-            
-        }
-
-        public virtual bool create(RpcEndpoint ep ) {
-            return false;
-        }
-    }
-
-    public class RpcConnectionAcceptorSocket:RpcConnectionAcceptor{        
-        public RpcConnectionAcceptorSocket() {
-            //_ep = ep;
-        }
-
-        //目前adapter仅仅处理client端，server模式暂不提供，故不会有Accptor的存在
-        public override bool create(RpcEndpoint ep){
-            return false; 
-        }
-    }
-
 
     /**
      * RpcConnection 表示任意通信方式的对外和对内方式的通信连接。 
@@ -88,6 +61,9 @@ namespace Tce {
         }
 
         protected virtual void onMessage(RpcMessage m) {
+            if ( _adapter == null &&_acceptor != null && _acceptor.adapter!=null) { // the connection from acceptor
+                _adapter = _acceptor.adapter;
+            } 
             if (_adapter != null &&  _adapter.dispatcher!=null) { //由adapter的线程执行
                 _adapter.dispatcher.dispatchMsg(m);
             }

@@ -43,6 +43,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="tce\acceptor.cs" />
+    <Compile Include="tce\acceptor_sock.cs" />
     <Compile Include="tce\adapter.cs" />
     <Compile Include="tce\adapter_sock.cs" />
     <Compile Include="tce\base.cs" />
