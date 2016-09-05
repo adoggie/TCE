@@ -7,7 +7,7 @@ package tce.android;
 //import java.nio.charset.Charset;
 //import java.io.*;
 
-//import tce.RpcCommAdapter;
+//import tce.RpcAdapter;
 //import tce.RpcCommunicator;
 import tce.RpcMessage;
 //import tce.RpcConnection;

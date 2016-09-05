@@ -1,23 +1,20 @@
 
 
 package tce;
-import java.util.*;
+import tce.mq.RpcConnection_QpidMQ;
 
-import tce.RpcCommAdapter;
-import tce.RpcCommunicator;
-import tce.RpcMessage;
-import tce.RpcConsts;
+import java.util.*;
 
 
 public class RpcConnection implements Runnable{
-	RpcCommAdapter _adapter = null;
+	RpcAdapter _adapter = null;
 	HashMap<Integer,RpcMessage> _msglist = new HashMap<Integer,RpcMessage>();
 	protected String _host;
 	protected int 	_port;
 	protected int _type;
 	protected boolean _connected = false;
-
 	protected String _token = null;
+	RpcConnectionAcceptor _acceptor = null;
 
 
 	public RpcConnection(String host,int port){
@@ -39,14 +36,20 @@ public class RpcConnection implements Runnable{
 		return _port;
 	}
 
-	public RpcCommAdapter getAdapter() {
+	public RpcAdapter getAdapter() {
 		return _adapter;
 	}
 
-	public void setAdapter(RpcCommAdapter adapter) {
+	public void setAdapter(RpcAdapter adapter) {
 		this._adapter = adapter;
-		adapter.addConnection(this);
+	}
 
+	public RpcConnectionAcceptor getAcceptor(){
+		return _acceptor;
+	}
+
+	public void setAcceptor(RpcConnectionAcceptor acceptor){
+		_acceptor = acceptor;
 	}
 
 	public int getType(){
@@ -78,10 +81,10 @@ public class RpcConnection implements Runnable{
 		// pass
 	}
 
-	public void attachAdapter(RpcCommAdapter adapter){
-		_adapter = adapter;
-		adapter.addConnection(this);
-	}
+//	public void attachAdapter(RpcAdapter adapter){
+//		_adapter = adapter;
+//		adapter.addConnection(this);
+//	}
 
 	public boolean isConnected(){
 		return _connected;
@@ -93,52 +96,27 @@ public class RpcConnection implements Runnable{
 
 	//clear up and free wait mutex for resuming user thread-control
 	void onDisconnected(){
-//		synchronized(this._msglist){
-//			for( RpcMessage m: _msglist.values()){
-//				try{
-//					synchronized(m){
-//						m.errcode = RpcConsts.RPCERROR_CONNECTION_LOST;
-//						m.notify();
-//					}
-//				}catch(Exception e){
-//					RpcCommunicator.instance().getLogger().error(
-//							e.getMessage()
-//							);
-//				}
-//			}
-//			_msglist.clear();
-//		}
 		RpcCommunicator.instance().onConnectionDisconnected(this);
 		_connected = false;
 	}
 
 
 	public  boolean sendMessage(RpcMessage m){
-//		try{
-//			Thread.sleep(100);
-//		}catch(Exception e){}
 		//仅仅返回消息需要置入等待队列
 		if( (m.calltype&RpcMessage.CALL)!=0 && (m.calltype&RpcMessage.ONEWAY) == 0 ){
-//				synchronized(this._msglist){
-//					_msglist.put(m.sequence,m);
-//				}
 			m.conn = this;
 			RpcCommunicator.instance().enqueueMessage(m.sequence,m);
 		}
 		boolean r =  sendDetail(m);
 		if(!r){
 			if( (m.calltype&RpcMessage.CALL)!=0 && (m.calltype&RpcMessage.ONEWAY) == 0 ){
-//				synchronized(this._msglist){
-//					_msglist.remove(m.sequence);
-//				}
 				RpcCommunicator.instance().dequeueMessage(m.sequence);
 			}
 		}
 		return r;
 	}
 
-	protected
-	boolean sendDetail(RpcMessage m){
+	protected boolean sendDetail(RpcMessage m){
 		return false;
 	}
 
@@ -146,14 +124,6 @@ public class RpcConnection implements Runnable{
 		RpcMessage m1 = null;
 		count+=1;
 
-//		synchronized(this._msglist){
-//			Integer key = new Integer(m2.sequence);
-//
-//			if( _msglist.containsKey(key) ){
-//				m1 = _msglist.get(key);
-//				_msglist.remove(key);
-//			}
-//		}
 		m1 = RpcCommunicator.instance().dequeueMessage(m2.sequence);
 
 		if(m1!=null){
@@ -167,12 +137,8 @@ public class RpcConnection implements Runnable{
 			}
 		}
 	}
-//		else{
-//			System.out.println("not matched..");
-//		}
-//	}
 
-	static int count=0;
+	static long count=0;
 
 	protected void dispatchMsg(RpcMessage m){
 		if( (m.calltype&RpcMessage.CALL) !=0){
@@ -185,6 +151,16 @@ public class RpcConnection implements Runnable{
 		}
 	}
 
+	protected void onMessage(RpcMessage m){
+		if( _adapter == null &&  _acceptor!=null && _acceptor.getAdapter()!=null){
+			_adapter = _acceptor.getAdapter();
+		}
+		if( _adapter!=null && _adapter.getDispatcher()!=null){
+			_adapter.getDispatcher().dispatchMsg(m);
+		}else{ // dispatch to global
+			RpcCommunicator.instance().dispatchMsg(m);
+		}
+	}
 
 
 }

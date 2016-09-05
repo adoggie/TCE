@@ -23,7 +23,7 @@ import org.apache.http.util.EntityUtils;
 import org.apache.http.message.BasicHeader;
 
 
-//import tce.RpcCommAdapter;
+//import tce.RpcAdapter;
 import tce.RpcCommunicator;
 import tce.RpcConnection;
 import tce.RpcMessage;

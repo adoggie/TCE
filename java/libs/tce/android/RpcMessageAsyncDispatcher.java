@@ -4,19 +4,18 @@ package tce.android;
 import java.util.*;
 import android.os.Handler;
 import android.os.Message;
-import tce.RpcCommAdapter;
+import tce.RpcAdapter;
 import tce.RpcCommunicator;
 import tce.RpcConsts;
 import tce.RpcMessage;
-import tce.android.RpcAsyncCommThread;
 
 //消息异步分派器
 public class RpcMessageAsyncDispatcher{ //  implements Runnable{
 	private static RpcMessageAsyncDispatcher _handle = null;
 	Handler _uih = null;
-	//RpcCommAdapter _adapter = null;
+	//RpcAdapter _adapter = null;
 	Hashtable<Integer,RpcMessage> _msglist = new Hashtable<Integer,RpcMessage>();
-	Vector<RpcCommAdapter> _adapters = new Vector<RpcCommAdapter>();
+	Vector<RpcAdapter> _adapters = new Vector<RpcAdapter>();
 
 	RpcMessageAsyncDispatcher(){
 		_uih = new Handler(){

@@ -4,25 +4,15 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.io.*;
 
-import tce.RpcCommAdapter;
-import tce.RpcCommunicator;
-import tce.RpcMessage;
-//import tce.RpcConnection;
-import tce.RpcMessageXML;
-import tce.RpcConsts;
-
-
-//import tce.RpcConnection_Socket;
 
 public class RpcConnection_SocketXML extends  RpcConnection  implements Runnable {
 
 	protected Socket 	_sock = null;
 	
 	protected ByteBuffer _buff;
-	protected RpcCommAdapter _adapter = null;
+	protected RpcAdapter _adapter = null;
 	protected Thread 	_workthread = null;;
 	
 	public RpcConnection_SocketXML(String host,int port){
@@ -97,18 +87,11 @@ public class RpcConnection_SocketXML extends  RpcConnection  implements Runnable
 		InetSocketAddress ep = new InetSocketAddress(_host,_port);
 		try{
 			_sock = new Socket();
-			//System.out.println(_sock.toString());
 			_sock.connect(ep,3000);
-//			if(_sock.isClosed()){
-//				System.out.println("socket closed");
-//			}
 			_workthread = new Thread(this);
 			_workthread.start();
-			
 			return true;
 		}catch(Exception e){
-//			RpcLogger log = RpcCommunicator.instance().getLogger();
-//			log.debug("abc");
 			RpcCommunicator.instance().getLogger().error("<connect()>"+ e.toString());
 		}
 		_sock = null;
@@ -155,29 +138,18 @@ public class RpcConnection_SocketXML extends  RpcConnection  implements Runnable
 	protected
 	synchronized boolean  sendDetail(RpcMessage m){
 		try{
-			//System.out.println("sendDetail..");
-			//if( _sock.isClosed()){
 			if( _sock == null){
 				if( !connect() ){
 					m.errcode = tce.RpcConsts.RPCERROR_CONNECT_FAILED;
-					//RpcAsyncCommThread.instance().dispatchMsg(m); //发送失败回送自己回去
 					return false;
 				}
 			}
-			//System.out.println("socket status:"+ String.valueOf( _sock.isConnected()) );
 			OutputStream os;
 			os = _sock.getOutputStream();
 			RpcMessageXML xml = (RpcMessageXML) m;
 			byte[] bytes;
 			bytes = xml.marshall();
-			//String s = new String(bytes,bytes.length);
-			//System.out.println( String.format("xml request >> %s \n",s) );
 			os.write(bytes);
-			//os.write(xml.marshall());
-			
-			
-			
-			
 		}catch(Exception e){
 			m.errcode = tce.RpcConsts.RPCERROR_SENDFAILED;
 			RpcCommunicator.instance().getLogger().error("<1.>"+e.toString());

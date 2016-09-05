@@ -2,9 +2,7 @@ package tce;
 
 import tce.utils.CompressionTools;
 
-import javax.net.SocketFactory;
 import javax.net.ssl.*;
-import javax.security.cert.X509Certificate;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -18,7 +16,7 @@ public class RpcConnection_Socket extends RpcConnection  {
 	Socket 	_sock = null;
 
 	ByteBuffer _buff;
-	RpcCommAdapter _adapter = null;
+	RpcAdapter _adapter = null;
 	Thread 	_workthread = null;;
 
 	public static final int META_PACKET_HDR_SIZE = 14;

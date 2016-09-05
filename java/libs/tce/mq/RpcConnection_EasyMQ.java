@@ -118,7 +118,7 @@ public class RpcConnection_EasyMQ extends tce.RpcConnection {
 	private int _readwrite;
 	private boolean _exit = false;
 	private IServerProxy _prx = null;
-	private RpcCommAdapter _adapter;
+	private RpcAdapter _adapter;
 	
 	RpcConnection_EasyMQ(String host,int port,String queueName,int readwrite){
 		super(host,port);

@@ -2,21 +2,16 @@ package tce;
 
 import java.util.*;
 
-import tce.RpcServant;
-import tce.RpcServantDelegate;
-import tce.RpcMessage;
-import tce.RpcMessageXML;
-
-public class RpcCommAdapterXML extends RpcCommAdapter {
+public class RpcAdapterXML extends RpcAdapter {
 	Hashtable<String,RpcServantDelegate> _servants = new 
 			Hashtable<String,RpcServantDelegate>();
 	
-	public RpcCommAdapterXML(String _id){
+	public RpcAdapterXML(String _id){
 		super(_id);
 	}
 	
 	@Override
-	boolean open(String host,int port){
+	public boolean open(){
 		return false;
 	}
 	
