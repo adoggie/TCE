@@ -2,6 +2,7 @@
 <module type="JAVA_MODULE" version="4">
   <component name="EclipseModuleManager">
     <varelement var="file://F:/projects/tce2/java/libs" value="linksrc:libs" />
+    <varelement var="file://F:/projects/tce2/java/libs" kind="linksrc:" value="libs" />
     <src_description expected_position="0">
       <src_folder value="file://$MODULE_DIR$/src" expected_position="0" />
       <src_folder value="file://F:/projects/tce2/java/libs" expected_position="1" />
@@ -15,12 +16,10 @@
     </content>
     <content url="file://$MODULE_DIR$/../../libs">
       <sourceFolder url="file://$MODULE_DIR$/../../libs" isTestSource="false" />
-      <excludeFolder url="file://$MODULE_DIR$/../../libs/easymq" />
       <excludeFolder url="file://$MODULE_DIR$/../../libs/tce/android" />
-      <excludeFolder url="file://$MODULE_DIR$/../../libs/tce/mq" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="jdk" jdkName="1.8" jdkType="JavaSDK" />
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="library" name="netty-all-4.1.5.Final" level="project" />
   </component>
 </module>
-

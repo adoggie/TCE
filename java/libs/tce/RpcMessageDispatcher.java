@@ -58,8 +58,8 @@ public class RpcMessageDispatcher implements Runnable{
 
             Vector<RpcMessage> msglist;
             try{
-                _messages.wait();
                 synchronized (_messages){
+	                _messages.wait();
                     msglist = _messages;
                     _messages = new Vector<RpcMessage>();
                 }

@@ -11,7 +11,7 @@ public class RpcLogger {
 	private int _loglevel = ALL;
 
 	public RpcLogger(){
-
+		setLevel(DEBUG);
 	}
 
 	public void setLevel(int level){
