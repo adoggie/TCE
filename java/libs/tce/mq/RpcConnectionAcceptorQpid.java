@@ -19,7 +19,7 @@ public class RpcConnectionAcceptorQpid extends RpcConnectionAcceptor {
     String _yaml_file;
 
 
-    HashMap<String,RpcConnection_QpidMQ> _conns = new HashMap<String,RpcConnection_QpidMQ>();
+
 
     protected RpcConnectionAcceptorQpid(String servername,String yaml){
         super();
@@ -42,7 +42,7 @@ public class RpcConnectionAcceptorQpid extends RpcConnectionAcceptor {
 
 
     public RpcConnection_QpidMQ getConnectionByName(String name){
-        return _conns.get( name );
+        return (RpcConnection_QpidMQ)getConnection( name );
     }
 
 
@@ -98,8 +98,9 @@ public class RpcConnectionAcceptorQpid extends RpcConnectionAcceptor {
                     RpcCommunicator.instance().getLogger().error("QpidMQ create failed! " + ep.name);
                     return false;
                 }
-                _conns.put( name,conn);
-                conn.setAcceptor(this);
+                addConnection(name,conn);
+//                _conns.put( name,conn);
+//                conn.setAcceptor(this);
             }
 
             node =(HashMap<String,Object>) root.get(serverName);
@@ -108,8 +109,8 @@ public class RpcConnectionAcceptorQpid extends RpcConnectionAcceptor {
                 HashMap<String,Object> item = (HashMap<String,Object>)o;
                 String call = (String)item.get("call");
                 String return_ = (String)item.get("return");
-                conn = _conns.get(call);
-                RpcConnection_QpidMQ connRead = _conns.get(return_);
+                conn = (RpcConnection_QpidMQ)getConnection(call) ;// _conns.get(call);
+                RpcConnection_QpidMQ connRead = (RpcConnection_QpidMQ) getConnection(return_); //_conns.get(return_);
                 conn.setLoopbackMQ(connRead);
                 if( connRead == null){
                     RpcCommunicator.instance().getLogger().error("QpidMQ not defined! "+ return_);

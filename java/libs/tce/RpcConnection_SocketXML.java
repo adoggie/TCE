@@ -99,7 +99,7 @@ public class RpcConnection_SocketXML extends  RpcConnection  implements Runnable
 	}
 	
 	@Override
-	void onDisconnected(){
+	protected  void onDisconnected(){
 		super.onDisconnected();
 		_sock = null;
 	}

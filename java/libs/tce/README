@@ -1,9 +1,14 @@
-tce for actionscript 
 
-支持对flex as程序语言的rpc映射
+CHANGE LOGS:
+------------
 
-2012.9 scott 
-shanghai. china 
-201114 
+2016.9.6 scott
 
-q:24509826
+ 1. 加入 Netty socket功能
+   [ Netty 4.1.5 ]
+    http://akamai.bintray.com/6c/6c08e88827d59a736330b79b81d80df218184b2ccb3602ed6806932e6ea9977c?__gda__=exp=1473128838~hmac=ba61856c448d70129ccd9a2d12dbcce56f75b51a810b6c83554d01e722c6fb96&response-content-disposition=attachment%3Bfilename%3D%22netty-4.1.5.Final.tar.bz2%22&response-content-type=application%2Fx-bzip2&requestInfo=U2FsdGVkX18mZHfSRtLiaHih023L-Ao8CaLlDeyrKf9E-hhyfZj2-sMPQ5GtJz9EN26xgxruRknpqo9qAtVt15c_XcQN7ChX0bo6X_MFAJtwHzeRy-W-zTFBtLyb9XbNeP0bKKI-GYb1GqPzSUjHGw
+
+    新增:  "RpcConnectionAcceptorNettySocket","RpcConnectionNettySocket"
+
+ 2. 调整 RpcConnectionSocket 的消息处理代码
+

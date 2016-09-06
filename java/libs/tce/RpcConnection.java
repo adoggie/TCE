@@ -14,8 +14,22 @@ public class RpcConnection implements Runnable{
 	protected int _type;
 	protected boolean _connected = false;
 	protected String _token = null;
-	RpcConnectionAcceptor _acceptor = null;
+	protected RpcConnectionAcceptor _acceptor = null;
+	protected String  _name = "";
+	protected boolean _ssl = false;
 
+
+	RpcConnection(){
+
+	}
+
+	public String getName(){
+		return _name;
+	}
+
+	public void setName(String name){
+		_name = name;
+	}
 
 	public RpcConnection(String host,int port){
 		_host = host;
@@ -60,8 +74,8 @@ public class RpcConnection implements Runnable{
 		return false;
 	}
 
-	public void open(){
-
+	public boolean open(){
+		return false;
 	}
 
 	public void close(){
@@ -95,7 +109,7 @@ public class RpcConnection implements Runnable{
 	}
 
 	//clear up and free wait mutex for resuming user thread-control
-	void onDisconnected(){
+	protected  void onDisconnected(){
 		RpcCommunicator.instance().onConnectionDisconnected(this);
 		_connected = false;
 	}
@@ -162,6 +176,10 @@ public class RpcConnection implements Runnable{
 		}
 	}
 
+	protected  boolean sendBytes(byte[] bytes){
+		// should not be in here
+		return false;
+	}
 
 }
 

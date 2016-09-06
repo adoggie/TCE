@@ -171,7 +171,7 @@ public class RpcConnection_EasyMQ extends tce.RpcConnection {
 	}
 	
 	@Override
-	public void open(){
+	public boolean open(){
 		
 		_worker = new BackWorker(this);		
 		
@@ -186,6 +186,7 @@ public class RpcConnection_EasyMQ extends tce.RpcConnection {
 			}
 		}
 		_do_open();
+		return true;
 	}
 	
 	private synchronized void _do_open(){

@@ -27,6 +27,11 @@ public class RpcConnection_Socket extends RpcConnection  {
 	private long _sent_num = 0 ;
 	protected Boolean _ssl = false;
 
+
+	protected  RpcConnection_Socket(){
+
+	}
+
 	public RpcConnection_Socket(String host,int port){
 		super(host,port);
 		//_sock = new Socket();
@@ -93,7 +98,7 @@ public class RpcConnection_Socket extends RpcConnection  {
 		return new ReturnValue(1,size);
 	}
 
-	 class ReturnValue{
+	 public class ReturnValue{
 		ReturnValue(int code_,int size_){
 			code = code_;
 			size = size_;
@@ -103,109 +108,100 @@ public class RpcConnection_Socket extends RpcConnection  {
 	}
 
 	 static int count=0;;
+
+
+	public class MessageReactor{
+
+		byte[] bufs = new byte[1024*4];
+		int p1 = 0;
+		RpcConnection conn ;
+
+		public MessageReactor(RpcConnection conn){
+			this.conn = conn;
+		}
+
+		public boolean enqueue(byte[] d,int len){
+
+			if( p1 + len > bufs.length){
+				byte[] temp= new byte[p1+len];
+				System.arraycopy(bufs,0, temp, 0, p1);
+				bufs = temp;
+			}
+			System.arraycopy(d, 0,bufs,p1, len);
+			p1 = p1+len;
+			int r;
+			Vector<byte[]> blocks = new Vector<byte[]>();
+			ReturnValue rc = parseMsg(bufs,p1,blocks);
+			r = rc.code;
+			if( r == -1 ) { // data dirty
+				RpcCommunicator.instance().getLogger().error("data dirty! closesocket()");
+				return false;
+			}
+
+			if( p1 != rc.size){
+				System.arraycopy(bufs, p1-rc.size, bufs, 0, rc.size);
+				p1 = rc.size;
+			}
+
+			for(byte[] b: blocks ){
+				RpcMessage m = RpcMessage.unmarshall(b);
+				if(m == null){
+					RpcCommunicator.instance().getLogger().error("decode message exception! closesocket()");
+					return false;
+				}else{
+					m.conn = this.conn;
+					try{
+						this.conn.onMessage(m);
+					}catch(Exception e){
+						RpcCommunicator.instance().getLogger().error( e.toString());
+					}
+				}
+			}
+			return true;
+		}
+	}
+
 	 @Override
 	public void run(){
 		long recved = 0 ;
 		try{
-			//BufferedReader in = new BufferedReader( new InputStreamReader(_sock.getInputStream()));
-
-			//_buff =  ByteBuffer.allocate(1024);
-			//_buff.order(ByteOrder.BIG_ENDIAN);
-			//ByteBuffer bytes = ByteBuffer.allocate(1024*4);
-//			RpcCommunicator.instance().getLogger().debug("22");
 			byte[] bufs = new byte[1024*4];
 			byte[] d = new byte[1024];
 			InputStream is = _sock.getInputStream();
 			int len;
 			int p1 = 0;
 
-			this.onConnected();
-			//int p2 = 0;
-//			RpcCommunicator.instance().getLogger().debug("33");
+			MessageReactor reactor = new MessageReactor(this);
+			onConnected();
+
 			while (true){
-//				RpcCommunicator.instance().getLogger().debug("35");
 				len = is.read(d);
 				if(len < 0 ){
 					_sock.close();
 					break;
 				}
-				recved+= len;
-//				System.out.println("recved bytes:"+recved+" "+len+" "+recved/36+" "+p1);
-//				RpcCommunicator.instance().getLogger().debug("44");
-				if( p1 + len > bufs.length){
-					//android traits  , copy left bytes
-					//bufs = Arrays.copyOf(bufs,p1+len);
-//					byte[] temp= new byte[bufs.length - (p1+len)];
-//					System.arraycopy(bufs,p1+len, temp, 0, temp.length);
-//					bufs = temp;
-
-					byte[] temp= new byte[p1+len];
-					System.arraycopy(bufs,0, temp, 0, p1);
-					bufs = temp;
-				}
-				System.arraycopy(d, 0,bufs,p1, len);
-				p1 = p1+len;
-				//Integer size = Integer.valueOf(p1);
-//				RpcCommunicator.instance().getLogger().debug("55");
-				int r;
-				Vector<byte[]> blocks = new Vector<byte[]>();
-				ReturnValue rc = parseMsg(bufs,p1,blocks);
-				r = rc.code;
-				if( r == -1 ) { // data dirty
-					_sock.close();
-					RpcCommunicator.instance().getLogger().error("data dirty! closesocket()");
+				if( !reactor.enqueue(d,len)){
+					close();
 					break;
 				}
-
-//				RpcCommunicator.instance().getLogger().debug("88");
-				if( p1 != rc.size){
-					System.arraycopy(bufs, p1-rc.size, bufs, 0, rc.size);
-					p1 = rc.size;
-				}
-
-//				if(r == 0){ // 数据不够
-//					continue;
-//					// need more read
-//				}
-//				RpcCommunicator.instance().getLogger().debug("99");
-//				System.out.println("blocks size:"+blocks.size());
-//				RpcCommunicator.instance().getLogger().debug("00");
-				for(byte[] b: blocks ){
-
-					RpcMessage m = RpcMessage.unmarshall(b);
-					if(m == null){
-						// close socket ,data dirty
-						_sock.close();
-						RpcCommunicator.instance().getLogger().error("decode message exception! closesocket()");
-						break;
-					}else{
-						m.conn = this;
-						try{
-//							RpcCommunicator.instance().getLogger().debug("00");
-
-							dispatchMsg(m);
-//							RpcCommunicator.instance().getLogger().debug("11:"+ ++count);
-						}catch(Exception e){
-							RpcCommunicator.instance().getLogger().error( e.toString());
-						}
-//						RpcCommunicator.instance().getLogger().debug("105");
-					}
-				}
-
 			} // -- end while()
 
 		}catch(Exception e){
 			RpcCommunicator.instance().getLogger().error("connection lost! \n detail:" + e.toString());
 		}
-		RpcCommunicator.instance().getLogger().debug("haha,connection thread exiting...");
 		onDisconnected();
+		RpcCommunicator.instance().getLogger().debug("haha,connection thread exiting...");
+	}
+
+	@Override
+	public boolean isConnected(){
+		return _sock == null?true:false;
 	}
 
 	@Override
 	public boolean connect(){
 		InetSocketAddress ep = new InetSocketAddress(_host,_port);
 		try{
-//			_sock = new Socket();
 			_sock = newSocket();
 			_sock.connect(ep);
 			_workthread = new Thread(this);
@@ -266,7 +262,7 @@ public class RpcConnection_Socket extends RpcConnection  {
 	}
 
 	@Override
-	void onDisconnected(){
+	protected  void onDisconnected(){
 		super.onDisconnected();
 		_sock = null;
 		_sent_num = 0 ; // 2013.11.25
@@ -281,11 +277,11 @@ public class RpcConnection_Socket extends RpcConnection  {
 			}
 			_sock.close();
 			_sock = null;
-			if(_workthread !=null){
-				_workthread.interrupt();
-				_workthread.join();
-				_workthread = null;
-			}
+//			if(_workthread !=null){
+//				_workthread.interrupt();
+//				_workthread.join();
+//				_workthread = null;
+//			}
 
 		}catch(Exception e){
 			RpcCommunicator.instance().getLogger().error(e.getMessage());
@@ -297,8 +293,9 @@ public class RpcConnection_Socket extends RpcConnection  {
 	@Override
 	protected
 	synchronized boolean  sendDetail(RpcMessage m){
+		boolean rc = true;
 		try{
-			if( _sock == null){
+			if( isConnected() == false){
 				if( !connect() ){
 					return false;
 				}
@@ -313,8 +310,8 @@ public class RpcConnection_Socket extends RpcConnection  {
 			}
 			_sent_num++;
 			////---------------------------------------
-			OutputStream os;
-			os = _sock.getOutputStream();
+//			OutputStream os;
+//			os = _sock.getOutputStream();
 			byte[]  d = m.marshall();
 
 			ByteBuffer buf = ByteBuffer.allocate(META_PACKET_HDR_SIZE+d.length);
@@ -331,19 +328,33 @@ public class RpcConnection_Socket extends RpcConnection  {
 			buf.put(  Integer.valueOf(RpcConsts.ENCRYPT_NONE).byteValue());
 			buf.putInt(VERSION);
 			buf.put(d);
-			byte[] d2 = buf.array();
 
-			os.write(buf.array());
-			d = d2;
+			rc = sendBytes(buf.array());
+
+//			byte[] d2 = buf.array();
+//			os.write(buf.array());
+//			d = d2;
 
 		}catch(Exception e){
 			e.printStackTrace();
 			RpcCommunicator.instance().getLogger().error(e.toString());
+			rc = false;
+		}
+		return rc;
+	}
+
+	@Override
+	protected  boolean sendBytes(byte[] bytes){
+		try {
+			OutputStream os;
+			os = _sock.getOutputStream();
+			os.write( bytes );
+		}catch (Exception e){
+			RpcCommunicator.instance().getLogger().error(e.getMessage());
 			return false;
 		}
 		return true;
 	}
-
 
 	@Override
 	protected void join(){
