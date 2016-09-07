@@ -1,3 +1,7 @@
+## 什么是 if-index-list.txt
+if-index-list.txt是tmake 在对idl生成对应语言代码框架时，为了限定生成输出接口和函数的序号而设置的配置文件。 
+if-index-list.txt文件应该放置在执行tmake的当前目录中，tmake在运行时自动读取if-index-list.txt文件。 
+
 
 ###file: if-index-list.txt
     
