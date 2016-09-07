@@ -20,7 +20,7 @@ Tce实现RPC的内容：
 ----------------
  1. c++ ( stl/boost/asio) *
  2. actionscript 
- 3. java
+ 3. java (qpid,jms,netty)
  4. python (gevent/libev/websocket) *
  5. javascript 
  6. php
@@ -50,6 +50,9 @@ Documents..
  <a href="./doc/tce应用示例_python.md">doc/tce应用示例_python.md</a>
  
  <a href="./doc/tce_for_objc.md">doc/tce_for_objc.md</a>
+ 
+  <a href="./doc/tce_for_objc.md">doc/tce_for_csharp.md</a>
+ 
 
 
 ###More...
