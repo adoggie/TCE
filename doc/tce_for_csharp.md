@@ -14,7 +14,7 @@ C＃的支持，开发工作主要是两部分：
 
 ##2.1 基础类型
 	
-	tce -> java
+	tce -> C#
 	---------------
     byte 	=> byte 
     bool 	=> bool
@@ -292,8 +292,8 @@ tce将为proxy对象自动生成调用服务接口的异步函数 xxxx_async(...
 		
 	生成的 Proxy代理函数原型: 
 	    class ServerProxy{	    	
-	    	public void hello_async(string text,delegate(RpcProxy proxy,object cookie),object cookie);
-	    	public void echo_async(string text,delegate(string result,RpcProxy proxy,object cookie),object cookie);
+	    	public void hello_async(string text,delegate(RpcProxy proxy,object cookie),Dictionary<string,string> props,object cookie);
+	    	public void echo_async(string text,delegate(string result,RpcProxy proxy,object cookie),Dictionary<string,string> props,object cookie);
 	    }
 
 
@@ -302,7 +302,7 @@ tce将为proxy对象自动生成调用服务接口的异步函数 xxxx_async(...
 	RpcProxy proxy = ServerProxy.create(conn);
 	proxy.echo_async("hello",delegate(string result,RpcProxy proxy,object cookie){
 		print "result:",result ," cookie:",cookie 
-	},"1001");
+	},null,"1001");
 		
 	
        
