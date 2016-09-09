@@ -1190,29 +1190,34 @@ def createCodeInterface(e,sw,idt,idx):
 
 		#-------- index of if-cls from extern setting in file
 	import tce_util
-	ifname = "%s.%s"%(module.name,e.name)
-	r = tce_util.getInterfaceIndexWithName(ifname)
-	# print 'get if-index:%s with-name:%s'%(r,ifname)
-	if r != -1:
-		ifidx = r
-	#--- end
-	e.ifidx = ifidx
-	print 'if-index:',ifidx
+	# ifname = "%s.%s"%(module.name,e.name)
+	# r = tce_util.getInterfaceIndexWithName(ifname)
+	# # print 'get if-index:%s with-name:%s'%(r,ifname)
+	# if r != -1:
+	# 	ifidx = r
+	# #--- end
+	# e.ifidx = ifidx
+	# print 'if-index:',ifidx
 
+	ifidx = e.index
 	interface_defs[ifidx] = {'e':e,'f':{}}
 
 	fileifx.write('<if id="%s" name="%s.%s"/>\n'%(ifidx,module.name,e.name))
 	fileifx.flush()
 
-	tce_util.rebuildFunctionIndex(e)
+	# tce_util.rebuildFunctionIndex(e)
 
 
 	createProxy(e,sw,ifidx)
 	# if not e.delegate_exposed: #????????,??????????RPC???????filter
 	# 	return
-	expose = tce_util.isExposeDelegateOfInterfaceWithName(ifname)
-	if not expose:
+	# expose = tce_util.isExposeDelegateOfInterfaceWithName(ifname)
+	# if not expose:
+	# 	return
+
+	if not tce_util.generateSkeleton(e,lexparser.language):
 		return
+
 	# begin servant ----
 	sw.classfile_enter(e.getName())
 	sw.writeln('import tce.*;')

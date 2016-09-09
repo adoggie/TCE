@@ -639,18 +639,12 @@ kwds=['struct',
 	  'void',
 	  'module'
 	  ]
-global_types_defs={}
-global_ifs_defs={}
 
-global_modules_defs={}
-"""
-{
-  module::element => elmentType
-  'A::Box'=>A.Box,
-  'B::Dog'=>A.Dog,
-}
-"""
-global_modules=[]
+global_types_defs={}  # as list of  " module::element_type => element "
+global_ifs_defs={}  # { module::interface_name => interface ,..}
+
+global_modules_defs={} # { module_name => module}
+global_modules=[]  # [ m1,m2,..]
 
 
 def register_global_types_def(module,type_,inst):

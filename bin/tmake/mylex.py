@@ -367,34 +367,13 @@ def p_dictionary_def(t):
 t_ANNOTATION_ATTRS = r'[A-Za-z_][A-Za-z0-9_]+?=[A-Za-z_][A-Za-z0-9_]+?='
 
 
-class AnnotationAttr:
-
-	def __init__(self,k,v,t):
-		self.k = k
-		self.v = v
-		self.t = t
-		if t == 'SCONST':
-			self.v = self.v.replace('\"','')
-
-class Annotation:
-	def __init__(self):
-		self.attrs={}
-
-	def put(self,k,v):
-		self.attrs[k] = v
-
 def p_annotation_attr(t):
 	"""
 		annotation_attr : IDENTIFIER '=' NUMBER
 			| IDENTIFIER '=' SCONST
 			| IDENTIFIER '=' IDENTIFIER
-
 	"""
-	# t,v = t[3].type,t[3].value
-	# attr = AnnotationAttr(t[1],v,t)
-
 	t[0] = (t[1],t[3].replace("\"",''))	# remove quotation
-	# print t[1], t[3]
 
 def p_annotation_attrs(t):
 	"""
@@ -427,24 +406,6 @@ def p_annotation_def(t):
 	t[0] = t[2]
 
 
-# def p_interface_def(t):
-# 	'''
-# 		interface_def :  INTERFACE IDENTIFIER '{' operatemembers '}'
-# 			| INTERFACE IDENTIFIER EXTENDS type '{' operatemembers '}'
-# 	'''
-# 	id = t[2]
-# 	ifc = Interface(id)
-# 	if len(t) == 8:
-# 		superif =  t[4]
-# 		ifc.superif = superif
-#
-# 		opms = t[6]
-# 	else:
-# 		opms = t[4]
-# 	ifc.opms = opms
-#
-# 	t[0] = ifc # reduce to syntax tree  ...
-
 def p_interface_def(t):
 	'''
 		interface_def :
@@ -452,8 +413,6 @@ def p_interface_def(t):
 			| INTERFACE IDENTIFIER '{' operatemembers '}'
 			|  INTERFACE IDENTIFIER EXTENDS type '{' operatemembers '}'
 			| annotation_def INTERFACE IDENTIFIER EXTENDS type '{' operatemembers '}'
-
-
 
 	'''
 
@@ -494,11 +453,6 @@ def p_operatemembers(t):
 	'''
 		operatemembers : operatemember
 	'''
-	#print 'operatemember num:',len(t) # 1 means no operatemebmer
-#	if len(t) > 1:
-#		t[0] = t[1]
-#	else:
-#		t[0] = []
 	t[0] = [t[1],]
 
 
@@ -567,27 +521,14 @@ def p_struct_def(t):
 		print 'struct id: %s invalid!'%id
 		sys.exit()
 
-#	type = getTypeDef(id)
-#	if  type:
-#		print 'error struct name:%s existed!'%(id)
-#		sys.exit()
-
 	st  = Struct(id)
-#	print t[4]
 	if not t[4]:
 		print 'error: struct <%s> cannot be empty!'%id
 		sys.exit()
-#	t[4].reverse()
 	for dm in t[4]:
 		if not st.createDataMember(dm):
 			print 'error: datamember<%s> name<%s> has existed!'%(id,dm.id)
 			sys.exit()
-
-#	types_def[id] = st	#注册数据类型到全局类型表
-	#print types_def
-#	types = local_types_def_stack[-1]
-#	types[id] = st
-
 	t[0] = st
 
 
@@ -596,11 +537,7 @@ def p_datamembers(t):
 	'''
 	datamembers :  datamember 
 	'''
-	#print t[1]
-	#t[0] = t[1]
 	t[0] = [t[1],]
-	#print 'a1..'
-	#print t[0]
 
 def p_datamembers_2(t):
 	'''
@@ -617,25 +554,17 @@ def p_datamember(t):
 	'''
 	datamember : type_id ';'
 	'''
-	#print 'datamenber..'
 	t[0] =  t[1]
 
 def p_type_id(t):
 	'''
 		type_id : type IDENTIFIER
 	'''
-	#print t[1],t[2]
 	id = t[2]
 	keys = kwds
-	# if lexparser.language == 'py':
-		#keys +=['def','import','from','type','str','int','float','class']
 	keys += lexparser.lang_kws
 	if keys.count(id):
 		t[2] = t[2] + '_'
-	# if not checkVariantName(id):
-	# 	print 'error: type_id.id<%s> illegal!'%(id)
-	# 	sys.exit()
-
 	t[0] = TypeId(t[1],t[2])
 
 
@@ -648,17 +577,7 @@ def p_type(t):
 	id = t[1]
 	if len(t) == 5:
 		id = '%s::%s'%(t[1],t[4])
-	# print id
-#	type = getTypeDef(t[1])
-#	print id
 	t[0] = id
-#	type = getTypeDef(id)
-#
-#	if type:
-#		t[0] = type
-#	else:
-#		print 'error(p_type): line %s'%(t.lineno),' type:%s not defined!'%id
-#		sys.exit()
 
 
 def p_error(t):
@@ -751,15 +670,18 @@ def module_type_parse(typename,n,m):
 	    NameList_t names;  // matching in same module
 	  }
 
-	:param typename:
-	:param n:
-	:param m:  local module
+	:param typename:  referenced type
+	:param n:  seek from 0 to current pos
+	:param m:  module
 	:return:
 	"""
+	#1. find in buitin types
+	#2. find in same module
+	#3. find in global_types_defs
 
 	t = types_def.get(typename) # builtin types check
 	if not t: # 未在类型列表则向前检索
-#		t = m.children.get(typename) #本module中不存在数据类型
+		# match type def in same module. look backward.
 		for p in range(n):
 			if typename == m.list[p].name:
 				t = m.list[p]
@@ -769,19 +691,18 @@ def module_type_parse(typename,n,m):
 		如在本module未能匹配到类型，则到全局module中查找
 		"""
 		if not t:
-			print '>>',typename
-			# print '.'*20 ,typename.name
-			ns = typename.split('::')
-			ns = map(string.strip,ns)
-			if len(ns) > 1:
-				ref_m = global_modules_defs.get(ns[0]) # B::Box
-				# print global_modules_defs,ns[0]
-				if ref_m:
-					print ref_m.children
-					t = ref_m.children.get(ns[1])
-					if t:
-						m.ref_modules[ns[0]]='' #引用到ns[0]模块,用于生成 #include <ref_module>
-						# print 'module <%s> references:'%m.name,m.ref_modules
+			# print '>>',typename
+			t = global_types_defs.get(typename)
+
+			# ns = typename.split('::')
+			# ns = map(string.strip,ns)
+			# if len(ns) > 1:
+			# 	ref_m = global_modules_defs.get(ns[0]) # B::Box
+			# 	if ref_m:
+			# 		print ref_m.children
+			# 		t = ref_m.children.get(ns[1])
+			# 		if t:
+			# 			m.ref_modules[ns[0]]='' #引用到ns[0]模块,用于生成 #include <ref_module>
 	return t
 
 def parse_idlfile(idlfile):
@@ -812,7 +733,7 @@ def parse_idlfile(idlfile):
 
 
 	except:
-		print 'IDL file access: <%s> denied!'%idl
+		print 'IDL file access fail: <%s> denied!'%idl
 		traceback.print_exc()
 		sys.exit()
 
@@ -838,7 +759,9 @@ def syntax_result(data=''):
 	# for name,m in global_modules_defs.items():
 	for m in global_modules:
 		name = m.name
+		# print m
 		# print 'module :', name,m.children.keys()
+		ifidx = 0
 		for n in range(len(m.list)):
 			e = m.list[n]
 			#-- sequence array
@@ -882,6 +805,19 @@ def syntax_result(data=''):
 			#-- interface --
 			if isinstance(e,Interface):
 				#处理基类接口 chained to super interface
+
+				e.index = ifidx
+				e.ifidx = ifidx
+
+				ifidx+=1
+				if hasattr(e,'annotation') and e.annotation.get('index'):
+					try:
+						e.index = int(e.annotation.get('index'))
+					except:
+						print 'error: interface <%s> index=%s illegal. '%(e.name,e.annotation.get('index'))
+						sys.exit()
+
+				#  super interface
 				if e.superif: #super class type is str
 					t = module_type_parse(e.superif,n,m)
 					#  t - base interface
@@ -890,7 +826,20 @@ def syntax_result(data=''):
 						sys.exit()
 					print 'super interface:<%s> in interface <%s>'%(t.name,e.name)
 					e.superif = t
+
+				opidx = 0
 				for opm in e.opms:
+
+					opm.index = opidx
+					opidx+=1
+					if hasattr(opm,'annotation') and opm.annotation.get('index'):
+						try:
+							opm.index = int(opm.annotation.get('index'))
+						except:
+							print 'error: function <%s::%s> index=%s illegal. '%(e.name,opm.name,opm.annotation.get('index'))
+							sys.exit()
+
+
 					# print  'interface:<%s> return:<%s> function:<%s> '%(e.name,opm.type,opm.name)
 					#--检测参数名称是否重复
 					params = map(lambda p:p.id,opm.params)

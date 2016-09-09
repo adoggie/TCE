@@ -706,22 +706,23 @@ def createCodeInterface(e,ostream,idt,idx):
 
 	#-------- index of if-cls from extern setting in file
 	import tce_util
-	ifname = "%s.%s"%(module.name,e.name)
-	r = tce_util.getInterfaceIndexWithName(ifname)
+	# ifname = "%s.%s"%(module.name,e.name)
+	# r = tce_util.getInterfaceIndexWithName(ifname)
 	# print 'get if-index:%s with-name:%s'%(r,ifname)
-	if r != -1:
-		ifidx = r
+	# if r != -1:
+	# 	ifidx = r
 	#--- end
 
 	sw = StreamWriter(ostream,idt)
-	e.ifidx = ifidx
+	# e.ifidx = ifidx
 
+	ifidx = e.index
 	interface_defs[ifidx] = {'e':e,'f':{}}
 
 	fileifx.write('<if id="%s" name="%s.%s"/>\n'%(ifidx,module.name,e.name))
 	fileifx.flush()
 
-	tce_util.rebuildFunctionIndex(e)
+	# tce_util.rebuildFunctionIndex(e)
 
 	createServant(e,sw)
 	createServantDelegate(e,ifidx,sw)

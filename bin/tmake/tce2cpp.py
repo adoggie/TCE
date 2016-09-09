@@ -5,15 +5,6 @@
 # ?????cpp???????
 # stl reference: http://msdn.microsoft.com/zh-tw/library/windows/apps/xaml/9h24a8cd
 
-# ??: 
-# 1. void??????????  ? 
-# 2. dictionary???key??? primitive????????struct?sequence?dictionary?key??????? < ?????
-# 3. ??adpater??? host+port????module?servant???????adaper???????????????
-# ?????? ????idx??????????module?servant?adapter???
-
-#2012.12.31
-# 1. ?????????idlmaping ????????????
-#    ??????????????
 
 import os
 import os.path
@@ -23,15 +14,10 @@ import lexparser
 from lexparser import *
 from mylex import syntax_result
 
-
-
-
 interface_idx = [ ]
 
 idx_datatype=1
 idx_interface = 1
-
-
 dataMapStream =0
 
 
@@ -1123,13 +1109,15 @@ def createCodeInterface(e,sw,idt,idx):
 
 
 	import tce_util
-	ifname = "%s.%s"%(e.container.name,e.name)
-	r = tce_util.getInterfaceIndexWithName(ifname)
-	# print 'get if-index:%s with-name:%s'%(r,ifname)
-	if r != -1:
-		ifidx = r
+	# ifname = "%s.%s"%(e.container.name,e.name)
+	# r = tce_util.getInterfaceIndexWithName(ifname)
+	# # print 'get if-index:%s with-name:%s'%(r,ifname)
+	# if r != -1:
+	# 	ifidx = r
+	#
+	# e.ifidx = ifidx
 
-	e.ifidx = ifidx
+	ifidx = e.index
 
 	interface_defs[ifidx] = {'e':e,'f':{}}
 
@@ -1137,11 +1125,12 @@ def createCodeInterface(e,sw,idt,idx):
 	fileifx.flush()
 
 
-	tce_util.rebuildFunctionIndex(e)
+	# tce_util.rebuildFunctionIndex(e)
 
 
-	expose = tce_util.isExposeDelegateOfInterfaceWithName(ifname)
+	# expose = tce_util.isExposeDelegateOfInterfaceWithName(ifname)
 
+	expose = tce_util.generateSkeleton(e,lexparser.language)
 
 	# if e.delegate_exposed:
 	if expose:
@@ -1566,10 +1555,3 @@ if __name__ =='__main__':
 	tce2cpp.py -i idl -o output.h
 
 	'''
-
-#	a=[10,20]
-#	t = TA(a)
-#	t.test()
-#	print a
-
-

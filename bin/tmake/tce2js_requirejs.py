@@ -1074,27 +1074,34 @@ def createCodeInterface(e,sw,idt,idx):
 
 
 
-	ifname = "%s.%s"%(module.name,e.name)
-	r = tce_util.getInterfaceIndexWithName(ifname)
+	# ifname = "%s.%s"%(module.name,e.name)
+	# r = tce_util.getInterfaceIndexWithName(ifname)
+	#
+	# if r != -1:
+	# 	ifidx = r
+	#
+	# e.ifidx = ifidx
 
-	if r != -1:
-		ifidx = r
+	ifidx = e.ifidx
 
-	e.ifidx = ifidx
 	interface_defs[ifidx] = {'e':e,'f':{}}
 	fileifx.write('<if id="%s" name="%s.%s"/>\n'%(ifidx,module.name,e.name))
 	fileifx.flush()
 
-	tce_util.rebuildFunctionIndex(e)
+	# tce_util.rebuildFunctionIndex(e)
 #
 #	#????????
 	createProxy(e,sw,ifidx)
 
-	r = tce_util.isExposeDelegateOfInterfaceWithName(ifname)
-	e.delegate_exposed = r
-	if not e.delegate_exposed:
-		print 'Interface:(%s) delegate not be exposed.'%ifname
+	# r = tce_util.isExposeDelegateOfInterfaceWithName(ifname)
+	# e.delegate_exposed = r
+	# if not e.delegate_exposed:
+	# 	print 'Interface:(%s) delegate not be exposed.'%ifname
+	# 	return
+
+	if not tce_util.generateSkeleton(e,lexparser.language):
 		return
+
 
 	sw.wln()
 	sw.writeln('// class %s'%e.getName())

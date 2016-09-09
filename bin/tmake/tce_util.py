@@ -217,6 +217,7 @@ def getInterfaceIndexWithName(name):
 	:param name:
 	:return:
 	"""
+
 	global ifs_def
 	loadInterfaceDefs()
 	ifx = ifs_def.get(name)
@@ -247,9 +248,27 @@ def getFunctionIndexWithName(name,if_name):
 	return -1
 
 def rebuildFunctionIndex(ifx):
-	module = ifx.container
-	for opidx,m in enumerate(ifx.list):
-		m.index = opidx  # based 0 ..
-		idx = getFunctionIndexWithName( m.name,"%s.%s"%(module.name,ifx.name))
-		if idx != -1:
-			m.index = idx
+	return
+	# module = ifx.container
+	# for opidx,m in enumerate(ifx.list):
+	# 	m.index = opidx  # based 0 ..
+	# 	idx = getFunctionIndexWithName( m.name,"%s.%s"%(module.name,ifx.name))
+	# 	if idx != -1:
+	# 		m.index = idx
+
+def getAnnotationAttributeValue(e,name,default=None):
+	value = default
+	if hasattr(e,'annotation'):
+		value = e.annotation.get(name,default)
+	return value
+
+def generateSkeleton(e,lang='js'):
+	"""
+	判别接口是否输出接口框架代码
+	:param lang:
+	:return:
+	"""
+	v = getAnnotationAttributeValue(e,'skeleton_'+lang,'')
+	if v.lower() =='false':
+		return False
+	return True

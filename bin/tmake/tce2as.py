@@ -597,20 +597,22 @@ def createCodeInterface(e,sw,idt,idx):
 
 
 	import tce_util
-	ifname = "%s.%s"%(e.container.name,e.name)
-	r = tce_util.getInterfaceIndexWithName(ifname)
-	if r != -1:
-		ifidx = r
-	#--- end
-	e.ifidx = ifidx
+	# ifname = "%s.%s"%(e.container.name,e.name)
+	# r = tce_util.getInterfaceIndexWithName(ifname)
+	# if r != -1:
+	# 	ifidx = r
+	# #--- end
+	# e.ifidx = ifidx
 
-
+	ifidx = e.index
 	interface_defs[ifidx] = {'e':e,'f':{}}
 
 	createInterfaceProxy(e,sw,ifidx)
 
-	expose = tce_util.isExposeDelegateOfInterfaceWithName(ifname)
-	if not expose:
+	# expose = tce_util.isExposeDelegateOfInterfaceWithName(ifname)
+	# if not expose:
+	# 	return
+	if not tce_util.generateSkeleton(e,lexparser.language):
 		return
 
 	sw.classfile_enter(e.getName())
