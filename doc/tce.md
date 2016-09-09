@@ -11,7 +11,8 @@
  	2015.7.6  scott  文档创建
  	2016.9.9  scott 
  	   1. 增加 2.3.6 跨模块类型引用
-   
+    2016.9.10 scott 
+       1. IDL 接口和函数增加元数据定义 Annotation 
 
 ## 1.1 背景
  互联网技术飞速发展，各种internet应用服务满天飞，每天都有新的idea层出不绝。互联网应用推成出新的速度非常的快，业务和技术快速更新和迭代，传统的开发模式和技术不能满足互联网模式的要求。
@@ -363,6 +364,49 @@ struct、sequence、dictionary支持定义嵌套，例如:
 关键字： `interface`
 接口是用户定义的一组服务功能的集合
 
+## 2.4.1 接口元属性Annotation定义
+为了方便控制编写idl和生成语言框架代码，在最近的tmake中支持对接口和函数进行元属性定义。 
+
+元属性，这个概念类似C#,java中的标注Annotation,我借用了C#的语法，在 接口和函数定义之前可添加标注属性。 
+
+属性定义的格式 : 
+
+    [key=value,key=value,...] 
+    
+    目前支持的key类型:  
+        index  - 自定义接口序列化编号
+        comment - 描述
+        skeleton_xxx - 规定接口实现是否生成服务端代码
+       
+examples:
+
+    module test{
+        [index=11,comment="base server"]
+        interface BaseServer{
+	        [index=10]
+	        string datetime();
+        };
+
+        [skeleton_js=false,skeleton_objc=false,skeleton_as=false,skeleton_cpp=false,skeleton_csharp=false,skeleton_java=false,comment=""]
+        interface Server extends BaseServer{
+	        string echo(string text);
+	        [index=5,comment="test"]
+	        void  timeout(int secs);
+	        [index=10]
+	        void heartbeat(string hello);
+	        [index=11]
+	        void bidirection();
+        };
+    }
+    
+在以上idl定义中，将 `BaseServer`的序列化编号定义为11 (当然这个序列化编号对用户是透明的，无需关心，由tce自动维护，但是在软件版本变更的场景时是必须的，
+因为接口增加、删除会打乱原始的序列化，所以提供一种方法令用户固定唯一的接口编号，困了，讲得有点糊涂 :-> )
+    
+`Server`接口定义了诸多 'skeleton_xxx'，每一项对应不同程序语言的输出控制，如果是false,则 `Server`接口不输出服务侧代码。
+    
+
+
+        
 
 ## 2.5 接口编译 tmake
 tmake是一组编译idl生成框架代码的工具，其位置: $TCE/bin/tmake/tce2xxx.py。
@@ -666,10 +710,22 @@ objc | yes | NSSocket | no |
 # 3. 应用场景
 <img src="./images/tce_system_delivery.png " width="800px"/>
 
-###GWServer  - 网关服务	接入大数量的客户请求连接，提供身份认证(token),数据安全通道（ssl)传输和消息路由分派功能。  	消息分派:  GWServer根据客户的Rpc请求调用的接口，将消息转发到后端服务系统，并从后端服务系统接收Rpc消息转发到前段客户程序。 GWServer扮演Rpc请求中间人角色，负责传递客户端与服务器之间Rpc消息的传递。 	事务性消息推入MQ系统，后端的业务服务器进行FanIn/FanOut消息的读取和发送。	实时性消息分派到HaProxy，并Fanout给后端业务服务器
+###GWServer  - 网关服务
+
+	接入大数量的客户请求连接，提供身份认证(token),数据安全通道（ssl)传输和消息路由分派功能。  
+	消息分派:  GWServer根据客户的Rpc请求调用的接口，将消息转发到后端服务系统，并从后端服务系统接收Rpc消息转发到前段客户程序。 GWServer扮演Rpc请求中间人角色，负责传递客户端与服务器之间Rpc消息的传递。 
+
+	事务性消息推入MQ系统，后端的业务服务器进行FanIn/FanOut消息的读取和发送。
+	实时性消息分派到HaProxy，并Fanout给后端业务服务器
 
 
-###如何从后端服务调用前端接口的Rpc请求	从后端服务器发起调用前端客户程序的Rpc接口函数，必须定位客户端程序与哪个Gwserver连接进入的，进而LogicServer构造Rpc请求，并将其通过MQ发送给指定的GWServer，继而传递到客户端程序。 	＊ Server端消息传递必须是单向的，或者是async异步的       server到前端客户程序只能是单向 	GWServer负责登记client id 到Redis，以便LogicServer根据client id查找GWServer的位置。 
+###如何从后端服务调用前端接口的Rpc请求
+
+	从后端服务器发起调用前端客户程序的Rpc接口函数，必须定位客户端程序与哪个Gwserver连接进入的，进而LogicServer构造Rpc请求，并将其通过MQ发送给指定的GWServer，继而传递到客户端程序。 
+	＊ Server端消息传递必须是单向的，或者是async异步的
+       server到前端客户程序只能是单向 
+	GWServer负责登记client id 到Redis，以便LogicServer根据client id查找GWServer的位置。 
+
 
 # 4. 移动互联网平台架构
 
