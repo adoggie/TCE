@@ -2,9 +2,12 @@
 
 module test{
 
+[index=1,enable=true,name="scott"]
 interface BaseServer{
+	[index=10]
 	string datetime();
 };
+
 
 interface ITerminalGatewayServer{
 	void ping();

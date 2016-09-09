@@ -63,9 +63,16 @@ tokens=(
 		'IDENTIFIER','STRUCT','NUMBER','INTERFACE',
 		'SEQUENCE','DICTIONARY','EXCEPTION','COMMENTLINE',
 		'IMPORT','MODULE','NAMESPACEIDENTIFIER','EXTENDS',
-		'FILENAME'
+		'FILENAME','ANNOTATION_ATTRS','EQUALS','SCONST'
+		# 'COMMA'
 #		'VOID',
 	)
+
+
+t_SCONST = r'\"([^\\\n]|(\\.))*?\"'
+
+# t_EQUALS = r'='
+# t_COMMA = r','
 
 def t_COMMENTLINE(t):
 	'//.*\n'
@@ -133,11 +140,11 @@ def	t_newline(t):
 
 def	t_error(t):
 #	print t
-	print("Illegal character: %s"%t.value[0])
+	print("error line:%s, Illegal character: %s"%(t.lineno,t.value) )
 	#print t.value,t
 	t.lexer.skip(1)
 
-literals = [ '{','}',';','(',')','<','>',',' ,':','"']
+literals = [ '{','}',';','(',')','<','>',',' ,':','"','[',']','=',',']
 
 #	Build	the	lexer
 lexer = lex.lex()
@@ -357,45 +364,127 @@ def p_dictionary_def(t):
 #	types[name] = dict
 	t[0] = dict
 
+t_ANNOTATION_ATTRS = r'[A-Za-z_][A-Za-z0-9_]+?=[A-Za-z_][A-Za-z0-9_]+?='
+
+
+class AnnotationAttr:
+
+	def __init__(self,k,v,t):
+		self.k = k
+		self.v = v
+		self.t = t
+		if t == 'SCONST':
+			self.v = self.v.replace('\"','')
+
+class Annotation:
+	def __init__(self):
+		self.attrs={}
+
+	def put(self,k,v):
+		self.attrs[k] = v
+
+def p_annotation_attr(t):
+	"""
+		annotation_attr : IDENTIFIER '=' NUMBER
+			| IDENTIFIER '=' SCONST
+			| IDENTIFIER '=' IDENTIFIER
+
+	"""
+	# t,v = t[3].type,t[3].value
+	# attr = AnnotationAttr(t[1],v,t)
+
+	t[0] = (t[1],t[3].replace("\"",''))	# remove quotation
+	# print t[1], t[3]
+
+def p_annotation_attrs(t):
+	"""
+		annotation_attrs : annotation_attrs ',' annotation_attr
+
+	"""
+	if not t[1]:
+		t[1] = {}
+	# t[1].append( t[3] )
+	k,v = t[3]
+	t[1][k] = v
+	t[0] = t[1]
+
+def p_annotation_attrs_2(t):
+	"""
+		annotation_attrs : annotation_attr
+
+	"""
+	if not t[0]:
+		t[0] = {}
+	# t[0].append( t[1] )
+	k,v = t[1]
+	t[0][k] = v
+
+
+def p_annotation_def(t):
+	"""
+		annotation_def : '[' annotation_attrs ']'
+	"""
+	t[0] = t[2]
+
+
+# def p_interface_def(t):
+# 	'''
+# 		interface_def :  INTERFACE IDENTIFIER '{' operatemembers '}'
+# 			| INTERFACE IDENTIFIER EXTENDS type '{' operatemembers '}'
+# 	'''
+# 	id = t[2]
+# 	ifc = Interface(id)
+# 	if len(t) == 8:
+# 		superif =  t[4]
+# 		ifc.superif = superif
+#
+# 		opms = t[6]
+# 	else:
+# 		opms = t[4]
+# 	ifc.opms = opms
+#
+# 	t[0] = ifc # reduce to syntax tree  ...
+
 def p_interface_def(t):
 	'''
-		interface_def :  INTERFACE IDENTIFIER '{' operatemembers '}'
-			| INTERFACE IDENTIFIER EXTENDS type '{' operatemembers '}'
+		interface_def :
+			| annotation_def INTERFACE IDENTIFIER '{' operatemembers '}'
+			| INTERFACE IDENTIFIER '{' operatemembers '}'
+			|  INTERFACE IDENTIFIER EXTENDS type '{' operatemembers '}'
+			| annotation_def INTERFACE IDENTIFIER EXTENDS type '{' operatemembers '}'
+
+
+
 	'''
-#	print t[1],t[2]
+
+	#-- begin annotation --
+	if type(t[1]) == type({}):
+		id = t[3]
+		ifc = Interface(id)
+		ifc.annotation = t[1]  #
+		if len(t) == 9: # extends
+			superif =  t[5]
+			ifc.superif = superif
+
+			opms = t[7]
+		else:
+			opms = t[5]
+		ifc.opms = opms
+		t[0] = ifc
+		return
+
+	# -- end --
+
 	id = t[2]
-#	ifx = getInterfaceDef(id)
-#	if ifx:
-#		print 'error: interface name(%s) has existed!'%id
-#		sys.exit()
-
-
 	ifc = Interface(id)
-	if len(t) == 8:
+	if len(t) == 8: # extends
 		superif =  t[4]
-#		print 'super if:',superif.name
-#
-#		if not getInterfaceDef(superif.name):
-#			print 'error(p_interface_def): specified interface:< %s > not defined!'%superif
-#			sys.exit()
 		ifc.superif = superif
 
 		opms = t[6]
 	else:
 		opms = t[4]
-#	opms.reverse()
-	#检测函数名称是否有重复
-#	print opms
 	ifc.opms = opms
-
-#	for opm in opms:
-#		if not ifc.createOperateMember(opm,id,t):
-#			print 'error(p_interface_def): line %s createOperateMember failed! interface:: %s.%s'%( t.lineno(3),t[2],opm.name)
-#			sys.exit()
-#
-#
-#	types = local_types_def_stack[-1]
-#	types[id] = ifc
 
 	t[0] = ifc # reduce to syntax tree  ...
 
@@ -425,19 +514,25 @@ def p_operatemembers_2(t):
 
 def p_operatemember(t):
 	'''
-		operatemember : callreturn IDENTIFIER '(' operateparams ')' ';'
+		operatemember :  callreturn IDENTIFIER '(' operateparams ')' ';'
+			| annotation_def callreturn IDENTIFIER '(' operateparams ')' ';'
 
 	'''
+
+	if type(t[1]) == type({}):
+		annotation = t[1]
+		params = t[5]
+		params.reverse()	# 这里必须进行倒置一下
+		opm = OperateMember(t[3],t[2],params)
+		t[0] = opm
+		opm.annotation = annotation
+		return
+
+
 	params = t[4]
 	params.reverse()	# 这里必须进行倒置一下
-
-	# 2013.5.30  参数都添加 '_' 后缀
-#	for p in params:
-#		p.id+='_'
-
 	opm = OperateMember(t[2],t[1],params)
 	t[0] = opm
-#	print 'x1.',opm
 
 def p_operateparams(t):
 	'''
