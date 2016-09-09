@@ -1,7 +1,17 @@
 # Tce
- author: `adoggie`  13916624477  sockref@hotmail.com 
+
  
- 2015.7.6
+ 
+ 	 about: 	adoggie		13916624477  
+ 	  			sockref@hotmail.com 
+ 	  			
+
+ 	  			
+ 	revision：
+ 	2015.7.6  scott  文档创建
+ 	2016.9.9  scott 
+ 	   1. 增加 2.3.6 跨模块类型引用
+   
 
 ## 1.1 背景
  互联网技术飞速发展，各种internet应用服务满天飞，每天都有新的idea层出不绝。互联网应用推成出新的速度非常的快，业务和技术快速更新和迭代，传统的开发模式和技术不能满足互联网模式的要求。
@@ -329,6 +339,24 @@ struct、sequence、dictionary支持定义嵌套，例如:
  };
 	
 ```
+
+###2.3.6 跨模块引用
+
+当跨模块引用数据类型时，需使用" module_prefix`::`type name "形式
+
+	
+	  module A{
+	    struct P1{ .. }
+	  }
+	  
+	  module B{
+	    sequence<string> NameList_t;
+	    interface Car{	    	
+	    	NameList_t start(A::P1 p);
+	    }
+	  }
+	
+以上定义中B模块的接口Car的start()函数参数引用了A模块的P1结构类型。 
 
 
 ## 2.4  接口 interface
