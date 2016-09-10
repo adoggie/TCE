@@ -1,0 +1,50 @@
+
+import base 
+
+module sns{
+
+
+struct IoDetail_t{
+	string name;
+	int max;
+	int min;
+};
+
+sequence<IoDetail_t> IoDetailList;
+sequence<string> StrList;
+
+struct TerminalInfo_t{
+	string name;
+	string address;
+	IoDetailList ios;
+};
+
+struct CapacityInfo_t{
+	string term;
+	int flow;
+	int ram;
+	int max;
+	string desc;
+};
+
+sequence<TerminalInfo_t> TerminalInfoList;
+dictionary<string,CapacityInfo_t> CapacityInfoList;
+
+
+interface ITerminal{
+    void onNotifyMessage(string  notify);
+};
+
+interface ICtrlServer extends IBaseServer{
+    string register(string user,string passwd ); 
+	void start_bidirection();
+	string  echo(string msg);
+	void   show(StrList sids);
+	CapacityInfo_t  getCapacityInfo(string termid);
+	TerminalInfoList    getTerminals(string type);
+	bool    save(string termid,CapacityInfoList capacities);
+	string  timeout(int waitsecs);
+};
+
+
+}

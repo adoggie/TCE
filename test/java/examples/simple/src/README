@@ -1,0 +1,11 @@
+
+
+simple
+=======
+	   演示java程序作为前端客户程序，通过gateway服务接入到平台，调用平台内部服务提供的接口函数.
+
+	   服务程序  ：
+	      $tce/test/python/examples/cluster
+	   启动 gateway.py , server.py
+
+	   本java程序调用server端服务接口
