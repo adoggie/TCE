@@ -110,9 +110,25 @@ namespace Tce {
 
 
     public class RpcAsyncCallBackBase{
-        public object delta = null;
-        private string _token = null;
-        private bool _execInMainThread = false;
+        //public object delta = null;
+        //private string _token = null;
+        //private bool _execInMainThread = false;
+        private RpcAsyncContext _ctx = null;
+        public RpcPromise promise;
+        public object cookie;
+
+        public RpcAsyncCallBackBase() {
+            
+        }
+
+        //public RpcAsyncCallBackBase(RpcAsyncContext ctx) {
+        //    _ctx = ctx;
+        //}
+
+        public RpcAsyncContext ctx {
+            get{return new RpcAsyncContext(this.cookie,this.promise);}
+            //set { _ctx = value; }
+        }
 
         public virtual void callReturn(RpcMessage m1, RpcMessage m2){
 

@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Collections.Generic;
 
 namespace Tce {
     public class RpcContext {
@@ -7,6 +8,24 @@ namespace Tce {
         public RpcContext() {
             
         }
+    }
+
+    public class RpcAsyncContext {        
+        public object cookie;
+        public RpcProxyBase proxy;
+        public RpcPromise promise;
+        public RpcException exception;
+
+        public RpcAsyncContext( object cookie,RpcPromise promise) {
+            this.cookie = cookie;
+            this.promise = promise;
+        }
+
+        public RpcAsyncContext() {
+            
+        }
+
+        
     }
 
 }

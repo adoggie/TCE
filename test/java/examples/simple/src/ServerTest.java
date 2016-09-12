@@ -81,7 +81,7 @@ public class ServerTest {
 		RpcAdapter adapter = RpcCommunicator.instance().createAdapter("server");
 
 		RpcConnectionAcceptor_NettySocket acceptor =
-				RpcConnectionAcceptor_NettySocket.create( new RpcEndPoint("localhost",16005));
+				RpcConnectionAcceptor_NettySocket.create( new RpcEndPoint("127.0.0.1",16005));
 		acceptor.open();
 		adapter.addConnectionAcceptor(acceptor);
 

@@ -35,9 +35,23 @@ namespace simple
         }
 
         void async_call() {
-            prx.echo_async("this is async test.", delegate(string result, RpcProxyBase proxy, object cookie) {
-                Console.WriteLine("you recieved one async result:"+ result + " cookie is:" + cookie);                
-            },null,"9680");
+            //RpcPromise p = new RpcPromise();
+            //p.then(delegate(RpcAsyncContext _) {
+            //    prx.echo_async("this is a sync text", 
+            //        delegate(string result, RpcAsyncContext ctx) {
+            //            Console.WriteLine("echo() result:" + result);
+            //            ctx.promise.data = result;
+            //        },_.promise);
+            //}).then(delegate(RpcAsyncContext _) {
+
+            //}).error(delegate(RpcAsyncContext _, RpcException e) {
+
+            //});
+            //p.end();
+
+            //prx.echo_async("this is async test.", delegate(string result, RpcProxyBase proxy, object cookie) {
+            //    Console.WriteLine("you recieved one async result:"+ result + " cookie is:" + cookie);                
+            //},null,"9680");
         }
 
         void call_extradata() {
@@ -60,8 +74,50 @@ namespace simple
 
         }
 
+        void test_promise() {
+            RpcPromise p = new RpcPromise();
+            p.then(delegate(RpcAsyncContext ctx) {
+                ctx.promise.data = "abc";
+                Console.WriteLine("step 1.1");
+                ctx.promise.onNext(ctx);
+            }).then(delegate(RpcAsyncContext ctx) {
+                Console.WriteLine("step 1.2");
+                Console.WriteLine(ctx.promise.data);
+                //ctx.promise.onNext(ctx);
+                ctx.promise.onError(ctx);
+            });
+            RpcPromise p2 = p.error(delegate(RpcAsyncContext ctx) {
+                //p.onNext(ctx,ctx.promise); 
+                Console.WriteLine("step 2.1");
+                ctx.promise.onError(ctx);
+            });
+            RpcPromise p3 = p2.error(delegate(RpcAsyncContext ctx) {
+                Console.WriteLine("step 3.1");
+                ctx.promise.onNext(ctx);
+            });
+            p3.then(delegate(RpcAsyncContext ctx) {
+                Console.WriteLine("step 2.2");
+                ctx.promise.onNext(ctx);
+            });
+            
+            p.then(delegate(RpcAsyncContext ctx) {
+                Console.WriteLine("step 1.3");
+                ctx.promise.onNext(ctx);
+            }).final(delegate(RpcAsyncContext ctx) {
+                Console.WriteLine("final.");
+                Console.WriteLine(ctx.promise.data);
+                Console.ReadKey(true);
+            }).end();
+
+        }
+
         static void Main(string[] args) {
+
+            
             Program program = new Program();
+            program.test_promise();
+            return;
+
             program.init();
             for (int n = 0; n < 1000; n++) {
                 program.two_way();

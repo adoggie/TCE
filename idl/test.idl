@@ -2,7 +2,7 @@
 
 module test{
 
-[index=1,enable=true,name="scott"]
+[index=11,comment="base server"]
 interface BaseServer{
 	[index=10]
 	string datetime();
@@ -13,7 +13,7 @@ interface ITerminalGatewayServer{
 	void ping();
 };
 
-
+[skeleton_js=false,skeleton_objc=false,skeleton_as=false,skeleton_cpp=false,skeleton_csharp=false,skeleton_java=true,comment=""]
 interface Server extends BaseServer{
 	string echo(string text);
 	void  timeout(int secs);

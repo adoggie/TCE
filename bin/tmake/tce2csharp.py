@@ -1118,21 +1118,25 @@ def createProxy(e,sw,ifidx):
 			vs = string.join( list,',')
 			if vs: vs = vs +','
 
+			promise = sw.newVariant('_promise')
+			ctx = sw.newVariant('_ctx')
+
 			# sw.writeln('public void %s_async(%s%s_AsyncCallBack async,Dictionary<string,string> props){'%(m.name,s,e.name) ).idt_inc()
-			sw.writeln('public void %s_async(%s%s_AsyncCallBack.delegate_%s async,Dictionary<string,string> props){'%(m.name,s,e.name,m.name) ).idt_inc()
-			sw.writeln('%s_async(%sasync,props,null);'%(m.name,vs) )
+			sw.writeln('public void %s_async(%s%s_AsyncCallBack.delegate_%s async,Dictionary<string,string> props,RpcPromise %s=null){'%(m.name,s,e.name,m.name,promise) ).idt_inc()
+			sw.writeln('%s_async(%sasync,props,null,%s);'%(m.name,vs,promise) )
 			sw.scope_end() # end function()
 			sw.wln()
 
-			sw.writeln('public void %s_async(%s%s_AsyncCallBack.delegate_%s async){'%(m.name,s,e.name,m.name) ).idt_inc()
+			sw.writeln('public void %s_async(%s%s_AsyncCallBack.delegate_%s async,RpcPromise %s=null){'%(m.name,s,e.name,m.name,promise) ).idt_inc()
 			# sw.writeln('public void %s_async(%s%s_AsyncCallBack async){'%(m.name,s,e.name) ).idt_inc()
-			sw.writeln('%s_async(%sasync,null,null);'%(m.name,vs) )
+			sw.writeln('%s_async(%sasync,null,null,%s);'%(m.name,vs,promise) )
 			sw.scope_end() # end function()
 			sw.wln()
+
 
 
 			# sw.writeln('public void %s_async(%s%s_AsyncCallBack async,Dictionary<string,string> props,object cookie){'%(m.name,s,e.name) ).idt_inc()
-			sw.writeln('public void %s_async(%s%s_AsyncCallBack.delegate_%s async,Dictionary<string,string> props,object cookie){'%(m.name,s,e.name,m.name) ).idt_inc()
+			sw.writeln('public void %s_async(%s%s_AsyncCallBack.delegate_%s async,Dictionary<string,string> props,object cookie,RpcPromise %s=null){'%(m.name,s,e.name,m.name,promise) ).idt_inc()
 			r = sw.newVariant('r')
 			sw.define_var(r,'bool','false')
 			m1 = sw.newVariant('m')
@@ -1142,6 +1146,11 @@ def createProxy(e,sw,ifidx):
 			sw.writeln('%s.paramsize = %s;'%(m1,len(m.params)))
 			sw.writeln('%s.extra.setProperties(props);'%m1)
 			sw.writeln('%s.cookie = cookie;'%m1)
+
+
+			sw.writeln('if( %s == null){'%promise).idt_inc()
+			sw.writeln('%s = new RpcPromise();'%promise).scope_end()
+
 			sw.writeln('try{').idt_inc()
 			if len(m.params):
 				bos = sw.newVariant('bos')
@@ -1175,16 +1184,29 @@ def createProxy(e,sw,ifidx):
 			acb = sw.newVariant('_acb')
 			sw.writeln('%s_AsyncCallBack %s = new %s_AsyncCallBack();'%(e.name,acb,e.name))
 			sw.writeln('%s.callback_%s = async;'%(acb,m.name))
+			sw.writeln('%s.cookie = cookie;'%(acb,))
+			sw.writeln('%s.promise = %s;'%(acb,promise))
 			sw.writeln('%s.async = %s;'%(m1,acb) )
-			# sw.writeln('%s.async = async;'%m1)
+			sw.writeln("%s = this.conn.sendMessage(%s);"%(r,m1)) #
+
+			sw.idt_dec().writeln('}catch(RpcException e){').idt_inc()
+			sw.writeln('RpcAsyncContext %s = new RpcAsyncContext(cookie,%s);'%(ctx,promise))
+			sw.writeln('%s.exception = e;'%ctx)
+			sw.writeln('%s.onError(%s);'%(promise,ctx))
+
 			sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
-			sw.writeln('throw new RpcException(RpcException.RPCERROR_DATADIRTY,e.ToString());')
+			# sw.writeln('throw new RpcException(RpcException.RPCERROR_DATADIRTY,e.ToString());')
+			sw.writeln('RpcAsyncContext %s = new RpcAsyncContext(cookie,%s);'%(ctx,promise))
+			sw.writeln('%s.exception = new RpcException(RpcException.RPCERROR_SENDFAILED,e.ToString() );'%ctx)
+			sw.writeln('%s.onError(%s);'%(promise,ctx))
+
 			sw.scope_end() # end try()
 
-			sw.writeln("%s = this.conn.sendMessage(%s);"%(r,m1)) # ????rpc????
-			sw.writeln("if(!%s){"%r).idt_inc()
-			sw.writeln('throw new RpcException(RpcException.RPCERROR_SENDFAILED);')
-			sw.scope_end() # end if()
+			# sw.writeln("%s = this.conn.sendMessage(%s);"%(r,m1)) # ????rpc????
+			# sw.writeln("if(!%s){"%r).idt_inc()
+			# sw.writeln('throw new RpcException(RpcException.RPCERROR_SENDFAILED);')
+			# sw.scope_end() # end if()
+			# sw.writeln('return %s;'%promise)
 			sw.scope_end() # end function()
 
 			sw.wln()
@@ -1216,11 +1238,17 @@ def createProxy(e,sw,ifidx):
 	for m in e.list: # func
 		# if m.type.name =='void': continue
 		if m.type.name == 'void':   # void ?????????
-			sw.writeln('public delegate void delegate_%s(RpcProxyBase proxy,object cookie);'%(m.name))
-			sw.writeln('public virtual void %s(RpcProxyBase proxy,object cookie){'%(m.name)).idt_inc()
+			# sw.writeln('public delegate void delegate_%s(RpcProxyBase proxy,object cookie);'%(m.name))
+			# sw.writeln('public virtual void %s(RpcProxyBase proxy,object cookie){'%(m.name)).idt_inc()
+
+			sw.writeln('public delegate void delegate_%s(RpcAsyncContext ctx);'%(m.name))
+			sw.writeln('public virtual void %s(RpcAsyncContext ctx){'%(m.name)).idt_inc()
 		else:
-			sw.writeln('public delegate void delegate_%s(%s result,RpcProxyBase proxy,object cookie);'%(m.name,m.type.getMappingTypeName(module)))
-			sw.writeln('public virtual void %s(%s result,RpcProxyBase proxy,object cookie){'%(m.name,m.type.getMappingTypeName(module))).idt_inc()
+			# sw.writeln('public delegate void delegate_%s(%s result,RpcProxyBase proxy,object cookie);'%(m.name,m.type.getMappingTypeName(module)))
+			# sw.writeln('public virtual void %s(%s result,RpcProxyBase proxy,object cookie){'%(m.name,m.type.getMappingTypeName(module))).idt_inc()
+			sw.writeln('public delegate void delegate_%s(%s result,RpcAsyncContext ctx);'%(m.name,m.type.getMappingTypeName(module)))
+			sw.writeln('public virtual void %s(%s result,RpcAsyncContext ctx){'%(m.name,m.type.getMappingTypeName(module))).idt_inc()
+
 		sw.scope_end()
 		sw.writeln('public delegate_%s callback_%s;'%(m.name,m.name))
 		sw.wln()
@@ -1244,7 +1272,8 @@ def createProxy(e,sw,ifidx):
 		sw.writeln('if( m1.opidx == %s ){'%opidx).idt_inc()
 		if m.type.name =='void':
 			# sw.writeln('%s(%s,%s);'%(m.name,'m1.prx','m1.cookie'))
-			sw.writeln('callback_%s(%s,%s);'%(m.name,'m1.prx','m1.cookie'))
+			# sw.writeln('callback_%s(%s,%s);'%(m.name,'m1.prx','m1.cookie'))
+			sw.writeln('callback_%s(this.ctx);'%(m.name,))
 		else:
 			sw.define_var(v,m.type.getMappingTypeName(module),m.type.getTypeDefaultValue(module))
 			if isinstance(m.type,Builtin):
@@ -1273,7 +1302,8 @@ def createProxy(e,sw,ifidx):
 
 			#?? ???????????rpc?????
 			# sw.writeln('%s(%s,%s,%s);'%(m.name,v,'m1.prx','m1.cookie')) #???unmarshall??okay
-			sw.writeln('callback_%s(%s,%s,%s);'%(m.name,v,'m1.prx','m1.cookie')) #???unmarshall??okay
+			# sw.writeln('callback_%s(%s,%s,%s);'%(m.name,v,'m1.prx','m1.cookie')) #???unmarshall??okay
+			sw.writeln('callback_%s(%s,this.ctx);'%(m.name,v,)) #???unmarshall??okay
 		sw.scope_end()
 		#		sw.scope_end()
 

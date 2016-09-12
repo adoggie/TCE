@@ -1,12 +1,23 @@
 
 
-待处理内容：
+TodoList 待处理内容：
 
 [python]  2015.5.22
-	1. Builtin数据序列化代码独立在tce包中实现数据处理 （serializer.py)
+yes	1. Builtin数据序列化代码独立在tce包中实现数据处理 （serializer.py)
 	2. 接口和函数的id改为uuid标识符号，防止接口定义变更导致编号冲突问题
 		最短摘要生成算法
 	3. 增加服务代码模块service, gws,消息服务都内置到tce库
 	4. 支持zeromq
 	5. ？可变长数值编码
 	6. 版本问题
+
+2016.9.8 scott
+   [yes scott 2016.9.8]
+   1. idl 增加 annotation ,接口和函数的序号可直接在idl文件中配置生成
+        同时控制是否输出接口的服务端代码
+        [index=n,comment="",skeleton_xxx=true/false]
+
+2016.9.9 scott
+    [python,csharp]
+    1. 客户端连增加异步连接
+    2. 异步调用增加Promise机制

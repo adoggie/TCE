@@ -61,6 +61,7 @@
     <Compile Include="tce\message_dispatcher.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="tce\promise.cs" />
     <Compile Include="tce\proxy.cs" />
     <Compile Include="tce\serialize.cs" />
     <Compile Include="tce\servant.cs" />
