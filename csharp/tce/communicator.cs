@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Timer = System.Timers.Timer;
 
 namespace Tce {
 
@@ -12,6 +13,7 @@ namespace Tce {
             public string name ="";     // server name 
             public int threadNum = 1; // 默认启动 1 条处理线程
             public int callwait = 1000*30; //最大调用返回等待超时时间,触发 promise.error
+            public int checkHealthInterval = 1000*3;
         }
 
         private int _sequence = 0;
@@ -23,6 +25,8 @@ namespace Tce {
         private Dictionary<int, RpcMessage> _cachedMsgList = new Dictionary<int, RpcMessage>();
         private Settings _settings = new Settings();
         private List<RpcConnection> _conns = new List<RpcConnection>();
+
+        private Timer _timer;
 
         RpcCommunicator() : base("communicator") {
             
@@ -49,8 +53,19 @@ namespace Tce {
             }
             _dispatcher =new RpcMessageDispatcher(this,_settings.threadNum);
             _dispatcher.open();
+
+            _timer = new Timer(settings.checkHealthInterval);
+            _timer.Elapsed += new System.Timers.ElapsedEventHandler(_timer_Elapsed);
+            _timer.AutoReset = true;
+            _timer.Enabled = true;
+            
             return true;
+
         }
+
+        public void _timer_Elapsed(object source, System.Timers.ElapsedEventArgs e){   
+            Console.WriteLine("Communicator:: health checking..");
+        }  
 
         public int getUniqueSequence() {
             Interlocked.CompareExchange(ref _sequence, Int32.MaxValue - 0xffff, 0);
