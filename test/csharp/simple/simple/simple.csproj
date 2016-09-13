@@ -50,6 +50,7 @@
     <Compile Include="tce\base.cs" />
     <Compile Include="tce\communicator.cs" />
     <Compile Include="tce\connection.cs" />
+    <Compile Include="tce\conn_asyncsock.cs" />
     <Compile Include="tce\conn_sock.cs" />
     <Compile Include="tce\context.cs" />
     <Compile Include="tce\endpoint.cs" />

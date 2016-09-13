@@ -17,7 +17,7 @@ namespace Tce {
         string      _host;
         int         _port;
         int         _type;
-        private RpcEndpoint _ep;
+        protected  RpcEndpoint _ep;
         bool        _connected = false;
         string      _token;
         RpcConnectionAcceptor _acceptor;

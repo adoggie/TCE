@@ -11,7 +11,7 @@ namespace Tce {
         public class Settings {
             public string name ="";     // server name 
             public int threadNum = 1; // 默认启动 1 条处理线程
-            public int callwait = 1000*30;
+            public int callwait = 1000*30; //最大调用返回等待超时时间,触发 promise.error
         }
 
         private int _sequence = 0;

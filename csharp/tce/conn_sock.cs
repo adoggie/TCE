@@ -15,13 +15,13 @@ namespace Tce {
         public const int VERSION = 0x00000100;
         public const int MAX_PACKET_SIZE = 1024*1024*1;
 
-        private Thread _thread;
-        private bool _ssl = false;
-        private RpcEndpointSocket _ep;
-        private string _token;
+        protected Thread _thread;
+        protected bool _ssl = false;
+        protected RpcEndpointSocket _ep;
+        protected string _token;
 
-        private Socket _sock = null;
-        private long _sent_num = 0;
+        protected Socket _sock = null;
+        protected long _sent_num = 0;
 
         public RpcConnectionSocket(RpcEndpointSocket ep) {
             _ep = ep;
@@ -54,7 +54,7 @@ namespace Tce {
             _sock = null;
         }
 
-        bool connect() {
+        protected virtual  bool connect() {
             bool r = false;
             IPAddress addr = IPAddress.Parse(_ep.host);
             try {
@@ -70,7 +70,7 @@ namespace Tce {
             return r;
         }
 
-        private Socket newSocket(){
+        protected Socket newSocket(){
             Socket sock = null ;
             if (_ep.ssl) {
                 //todo. next ssl
@@ -84,12 +84,14 @@ namespace Tce {
         }
 
         protected override void onDisconnected() {
+            _sent_num = 0;
+            base.onDisconnected();
             close();
         }
 
         protected override bool sendDetail(RpcMessage m) {
             
-            if (_sock == null) {
+            if ( !isConnected) {
                 if (!connect()) {
                     return false;
                 }
@@ -101,17 +103,38 @@ namespace Tce {
                 }
             }
 
-            byte[] body = null;
-            body = ((MemoryStream) m.marshall()).ToArray();
-            byte[] hdr = createMetaPacketHeader(body.Length);
-            _sock.Send(hdr);
-            _sock.Send(body);
+            //byte[] body = null;
+            //body = ((MemoryStream) m.marshall()).ToArray();
+            byte[] bytes = createMsgBody(m).ToArray();
+            _sock.Send(bytes);            
             _sent_num++;
-
             return true;
         }
 
-        private byte[] createMetaPacketHeader(int msg_size) {
+        protected MemoryStream createMsgBody(RpcMessage m)
+        {
+            //byte[] hdrbBytes = null;
+            MemoryStream stream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(stream);
+            MemoryStream bodystream = (MemoryStream) m.marshall();
+            byte[] bytes = bodystream.ToArray();
+            unchecked
+            {
+                writer.Write((uint)IPAddress.HostToNetworkOrder((int)PACKET_META_MAGIC));
+            }
+
+            writer.Write((uint)IPAddress.HostToNetworkOrder(bytes.Length + META_PACKET_HDR_SIZE - 4));
+            writer.Write((byte)RpcConstValue.COMPRESS_NONE);
+            writer.Write((byte)RpcConstValue.ENCRYPT_NONE);
+            writer.Write((uint)IPAddress.HostToNetworkOrder(VERSION));
+
+            writer.Write(bytes);
+            //hdrbBytes = stream.ToArray();
+            //return hdrbBytes;
+            return stream;
+        }
+
+        protected byte[] createMetaPacketHeader(int msg_size) {
             byte[] hdrbBytes = null;
             MemoryStream stream =new MemoryStream();
             BinaryWriter writer =new BinaryWriter(stream);
@@ -195,6 +218,12 @@ namespace Tce {
                 msglist.Add(m);
             }
             return new ReturnValue(ReturnValue.SUCC,msglist,stream);
+        }
+
+        public virtual Socket handler {
+            get {
+                return _sock;
+            }
         }
 
         protected override  void run() {

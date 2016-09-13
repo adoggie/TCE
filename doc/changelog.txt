@@ -21,3 +21,7 @@ yes	1. Builtin数据序列化代码独立在tce包中实现数据处理 （seria
     [python,csharp]
     1. 客户端连增加异步连接
     2. 异步调用增加Promise机制
+    3. csharp 需增加调试 远程执行错误和 异步调用超时触发promise的error函数
+    4. communicator增加定时器，检查 异步调用时缓存的消息
+    5. 修改 _delegate()实现方法， java语言版本 void 调用不返回RpcMessageReturn的情况
+       在生成的fun_xx_delegate()方法中，去除try..catch, 返回 RpcMessage,通过RpcAdapter进行异常捕获并发送回消息

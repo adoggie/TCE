@@ -106,6 +106,15 @@ namespace Tce {
             : base(RpcMessage.RETURN){
 
         }
+
+        public RpcMessageReturn(int seq, int errcode):this() {
+            this.sequence = seq;
+            this.errcode = errcode;
+        }
+
+        public void send(RpcConnection conn) {
+            conn.sendMessage(this);
+        }
     }
 
 

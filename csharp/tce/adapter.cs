@@ -173,6 +173,8 @@ namespace Tce
         
 
         void doError(int errcode, RpcMessage m){
+            RpcMessageReturn msgreturn = new RpcMessageReturn(m.sequence,errcode);
+            msgreturn.send(m.conn);
             //		RpcConnection conn = m.conn;
             /*
             var sm:RpcMessageReturn = new RpcMessageReturn();
@@ -192,7 +194,16 @@ namespace Tce
                     }
                     dg = _servants[m.ifidx];
                 }
-                dg.invoke(m);
+                try {
+                    RpcMessage msgreturn = dg.invoke(m);
+                    if (msgreturn != null) {
+                        m.conn.sendMessage(msgreturn);
+                    }
+                }
+                catch (Exception e) {
+                    RpcCommunicator.instance().logger.error(" execute servant failed:" + e.ToString());
+                    doError(RpcException.RPCERROR_REMOTEMETHOD_EXCEPTION,m);
+                }
             }
         }
 

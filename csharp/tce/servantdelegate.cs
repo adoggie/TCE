@@ -7,8 +7,8 @@ namespace Tce {
         public RpcAdapter adapter;
         public int ifidx;
 
-        public virtual bool invoke(RpcMessage m) {
-            return true;
+        public virtual RpcMessage invoke(RpcMessage m) {
+            return null;
         }
     }
 
