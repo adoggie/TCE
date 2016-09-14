@@ -560,6 +560,77 @@ server.py
 ```
 
 
+###2.6.7 Promise使用
+
+异步编程已是主流，主要应用在 移动前端App(禁止阻塞调用线程) 、系统服务器（大规模接入和并发数据)。
+
+Promise充斥在js各个角落，各种知名第三方软件项目都存在类似Promise的组件。 
+
+那Promise是个什么样的东西，且为何要使用Promise呢？
+
+    Promise表示一个未发生的执行事件的定义，在Java的Netty项目中对应的组件叫做 `Future`.
+    现在越来越的应用系统开发采用异步IO来提高系统处理的能力，且事实证明其的确是高效。
+    javascript ES6已经内置了Promise组件, js所有的io操作均是异步操作。 
+    Android 通过handler处理异步操作，防止主线程被阻塞。 
+    Tornado,NodeJs,epoll,Netty,libaio,libev都是相关的异步处理技术。
+    但是异步处理也带来的开发的复杂性，使得交互处理行为无法被串行处理，不同的操作步骤被分割到不同的
+    异步回调函数中钩挂，使得代码可读性、可维护性变得很差。
+    Promise的作用是将 异步调用的嵌套 转为同一平面的调用，提供类似同步调用的方式。
+
+tce的Promise
+
+    tce的client调用模式中的异步调用在使用时需提供返回接口callback，callback实现方式可以是函数地址，委托，接口方式。
+    异步带来的问题在于调用嵌套，例如：a,b,c是一组连续调用，且后者必须在前者调用成功之后 被调用，这就导致tree嵌套调用，使得代码可读性，可维护性变得很糟糕。
+    针对这种异步调用嵌套的解决方案就是Promise，类似链表管理节点一样链接不同的调用，提供一种同步调用的方式。
+    异步调用不再是返回void了，而是RpcPromise对象，然后通过promise.then(result,error)来驱动串行调用。
+    通过promise传递两次调用的输出和输入值。
+    需要在异步接口函数加入promise对象，用于保存本次异步调用需向后一个调用传递的值。
+    promise.then()的回调函数也需增加promise输入来获得上一处理结果的输出。
+    
+
+
+Promise调用流程
+<img src="./images/promise_flows.png " width="800px"/>
+
+    C# example:
+    
+    void test_promise() {
+            RpcPromise p = new RpcPromise();
+            p.then(delegate(RpcAsyncContext ctx) {
+                ctx.promise.data = "abc";
+                Console.WriteLine("step 1.1");
+                ctx.promise.onNext(ctx);
+            }).then(delegate(RpcAsyncContext ctx) {
+                Console.WriteLine("step 1.2");
+                Console.WriteLine(ctx.promise.data);
+                //ctx.promise.onNext(ctx);
+                ctx.promise.onError(ctx);
+            });
+            RpcPromise p2 = p.error(delegate(RpcAsyncContext ctx) {
+                //p.onNext(ctx,ctx.promise); 
+                Console.WriteLine("step 2.1");
+                ctx.promise.onError(ctx);
+            });
+            RpcPromise p3 = p2.error(delegate(RpcAsyncContext ctx) {
+                Console.WriteLine("step 3.1");
+                ctx.promise.onNext(ctx);
+            });
+            p3.then(delegate(RpcAsyncContext ctx) {
+                Console.WriteLine("step 2.2");
+                ctx.promise.onNext(ctx);
+            });
+            
+            p.then(delegate(RpcAsyncContext ctx) {
+                Console.WriteLine("step 1.3");
+                ctx.promise.onNext(ctx);
+            }).final(delegate(RpcAsyncContext ctx) {
+                Console.WriteLine("final.");
+                Console.WriteLine(ctx.promise.data);
+                Console.ReadKey(true);
+            }).end();
+
+        }
+
 
 
 ## 2.7 内部结构  
