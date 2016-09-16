@@ -40,8 +40,11 @@ public class RpcAdapterXML extends RpcAdapter {
 				return;
 			}
 			
-			
-			dg.invoke(m);
+			try {
+				dg.invoke(m);
+			}catch (Exception e){
+				RpcCommunicator.instance().getLogger().error(e.toString());
+			}
 			
 			
 		}

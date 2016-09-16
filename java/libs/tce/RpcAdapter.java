@@ -91,13 +91,8 @@ public class RpcAdapter implements RpcMessageDispatcher.Client {
 	}
 
 	void doError(int errcode,RpcMessage m){
-//		RpcConnection conn = m.conn;
-		/*
-		var sm:RpcMessageReturn = new RpcMessageReturn();
-		sm.sequence = m.sequence;
-		sm.errcode = errcode;
-		conn.sendMessage(sm);
-		*/
+		RpcMessageReturn msgreturn = new RpcMessageReturn(m.sequence,errcode);
+		msgreturn.send(m.conn);
 	}
 
 	public synchronized void addConnectionAcceptor(RpcConnectionAcceptor acceptor){
@@ -133,10 +128,15 @@ public class RpcAdapter implements RpcMessageDispatcher.Client {
 				}
 				dg = _servants.get(m.ifidx);
 			}
-			if( dg == null){
-				return;
+			try {
+				RpcMessage msgreturn = dg.invoke(m);
+				if( msgreturn != null){
+					m.conn.sendMessage(msgreturn);
+				}
+			} catch(Exception e){
+				RpcCommunicator.instance().getLogger().error(" execute servant failed:" + e.toString());
+				doError(RpcConsts.RPCERROR_REMOTEMETHOD_EXCEPTION,m);
 			}
-			dg.invoke(m);
 		}
 	}
 	

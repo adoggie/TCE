@@ -10,7 +10,7 @@ namespace Tce {
         }
 
         public override string ToString() {
-            return string.Format("error:{0}, message:{1}", this.error, this.errmsg);
+            return string.Format("error:{0} {1}, message:{2}", this.error, errorString(this.error),this.errmsg);
         }
 
 

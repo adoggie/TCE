@@ -120,7 +120,28 @@ namespace Tce {
 
 		    if(m1!=null){
 			    if(m1.async !=null){
-				    m1.async.callReturn(m1,m2); 
+                    // it will raise exception in user callback function 
+			        try {
+			            if (m2.errcode != RpcException.RPCERROR_SUCC) {
+			                // remote exception
+                            //m1.async.ctx.exception = new RpcException(m2.errcode);
+			                if (m1.async.promise != null) {
+                                RpcAsyncContext ctx = new RpcAsyncContext();
+			                    ctx.promise = m1.async.promise;
+                                ctx.exception = new RpcException(m2.errcode);
+			                    m1.async.promise.onError( ctx );
+			                }
+			                else {
+			                    m1.async.onError(m2.errcode);  
+			                }
+			            }
+			            else {
+			                m1.async.callReturn(m1, m2);
+			            }
+			        }
+			        catch (Exception e) {
+			            RpcCommunicator.instance().logger.error("User CallBack failed: m1.async.callReturn ." + e.ToString());
+			        }
 			    }else{
 				    lock(m1){
 					    m1.result = m2; // assing to init-caller

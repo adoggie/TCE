@@ -35,23 +35,25 @@ namespace simple
         }
 
         void async_call() {
-            //RpcPromise p = new RpcPromise();
-            //p.then(delegate(RpcAsyncContext _) {
-            //    prx.echo_async("this is a sync text", 
-            //        delegate(string result, RpcAsyncContext ctx) {
-            //            Console.WriteLine("echo() result:" + result);
-            //            ctx.promise.data = result;
-            //        },_.promise);
-            //}).then(delegate(RpcAsyncContext _) {
-
-            //}).error(delegate(RpcAsyncContext _, RpcException e) {
-
-            //});
-            //p.end();
-
-            //prx.echo_async("this is async test.", delegate(string result, RpcProxyBase proxy, object cookie) {
-            //    Console.WriteLine("you recieved one async result:"+ result + " cookie is:" + cookie);                
-            //},null,"9680");
+            RpcPromise p = new RpcPromise();
+            p.then(_ => {
+                prx.echo_async("this is a sync text",
+                    delegate(string result, RpcAsyncContext ctx) {
+                        Console.WriteLine("echo() result:" + result);
+                        ctx.promise.data = result;
+                        _.promise.onNext(ctx);
+                    }, _.promise);
+            }).then(_ => {
+                prx.timeout_async(1000, delegate(RpcAsyncContext ctx) {
+                    Console.WriteLine("timeout completed!");
+                });
+            }).error(_ => {
+                Console.WriteLine("async call error:"+ _.exception.ToString());
+                _.promise.onNext(_);
+            }).final(_ => {
+                Console.WriteLine(" commands be executed completed!");
+            });
+            p.end();
         }
 
         void call_extradata() {
@@ -64,7 +66,7 @@ namespace simple
         void init() {
             RpcCommunicator.instance().logger.addLogHandler("stdout", new RpcLogHandlerStdout());
             RpcCommunicator.instance().initialize("server1");
-            RpcCommunicator.instance().settings.callwait = 1000*1000;
+            //RpcCommunicator.instance().settings.callwait = 1000*1000;
 
             RpcAdapter adapter = RpcCommunicator.instance().createAdapter("adapter1");
             prx = ServerProxy.create("192.168.199.235", 16005, false);
@@ -115,15 +117,15 @@ namespace simple
 
             
             Program program = new Program();
-            program.test_promise();
-            return;
+            //program.test_promise();
+            //return;
 
             program.init();
-            for (int n = 0; n < 1000; n++) {
-                program.two_way();
-                program.one_way();
+            for (int n = 0; n < 1; n++) {
+                //program.two_way();
+                //program.one_way();
                 program.async_call();
-                program.bidirection();
+                //program.bidirection();
 
                 System.Threading.Thread.Sleep(1000);
             }

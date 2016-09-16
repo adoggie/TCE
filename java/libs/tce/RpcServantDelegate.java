@@ -12,9 +12,9 @@ public class RpcServantDelegate{
 		
 	}
 	
-	public boolean invoke(RpcMessage m){
-		
-		return true;
+	public RpcMessage invoke(RpcMessage m) throws Exception{
+		// if function have return value, it must be RpcMessageReturn.
+		return null;
 	}
 	
 }

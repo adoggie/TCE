@@ -14,6 +14,7 @@ namespace Tce {
             public int threadNum = 1; // 默认启动 1 条处理线程
             public int callwait = 1000*30; //最大调用返回等待超时时间,触发 promise.error
             public int checkHealthInterval = 1000*3;
+            public bool socket_async_conn = true;
         }
 
         private int _sequence = 0;
@@ -54,8 +55,8 @@ namespace Tce {
             _dispatcher =new RpcMessageDispatcher(this,_settings.threadNum);
             _dispatcher.open();
 
-            _timer = new Timer(settings.checkHealthInterval);
-            _timer.Elapsed += new System.Timers.ElapsedEventHandler(_timer_Elapsed);
+            _timer = new Timer(this.settings.checkHealthInterval);
+            _timer.Elapsed += new System.Timers.ElapsedEventHandler(_timerCheckHealth);
             _timer.AutoReset = true;
             _timer.Enabled = true;
             
@@ -63,8 +64,36 @@ namespace Tce {
 
         }
 
-        public void _timer_Elapsed(object source, System.Timers.ElapsedEventArgs e){   
-            Console.WriteLine("Communicator:: health checking..");
+        protected void _timerCheckHealth(object source, System.Timers.ElapsedEventArgs e) {
+            //RpcCommunicator.instance().logger.debug("Communicator:: health checking..");
+            List<RpcMessage> removeList = new List<RpcMessage>();
+            lock (_cachedMsgList){
+                long cursec = Utility.unixTimestamp(DateTime.Now);
+                List<int> deprecatedlist=new List<int>();                
+                foreach (KeyValuePair<int, RpcMessage> kv in _cachedMsgList) {
+                    if ( (cursec - kv.Value.issuetime)*1000 > _settings.callwait) {
+                        deprecatedlist.Add( kv.Key);
+                    }
+                }
+                foreach (int seq in deprecatedlist) {
+                    removeList.Add( _cachedMsgList[seq]);
+                    _cachedMsgList.Remove(seq);
+                    RpcCommunicator.instance().logger.error(String.Format("message({0}) be dropped for timeout", seq));
+                }               
+            }
+            //
+            foreach (RpcMessage message in removeList) {
+                if (message.async.promise == null) {
+                    message.async.onError(RpcException.RPCERROR_TIMEOUT);
+                }
+                else {
+                    RpcAsyncContext ctx = new RpcAsyncContext();
+                    ctx.promise = message.async.promise;
+                    ctx.exception = new RpcException(RpcException.RPCERROR_TIMEOUT);
+                    message.async.promise.onError(ctx);
+                }
+            }
+
         }  
 
         public int getUniqueSequence() {
@@ -85,6 +114,7 @@ namespace Tce {
          */
         internal RpcCommunicator enqueueMessage(int sequence, RpcMessage m){
             lock (_cachedMsgList) {
+                m.issuetime = Utility.unixTimestamp(DateTime.Now);
                 _cachedMsgList.Add(sequence,m);
             }
             return this;
@@ -153,11 +183,10 @@ namespace Tce {
         public RpcConnection createConnection(int type, string host, int port){
             if ((type & RpcConstValue.CONNECTION_SOCK) != 0)
             {
-                if ((type & RpcConstValue.CONNECTION_SSL) != 0)
-                {
-                    return new RpcConnectionSocket(host, port, true);
+                if (_settings.socket_async_conn) {
+                    return new RpcConnectionAsyncSocket(host, port, (type & RpcConstValue.CONNECTION_SSL) != 0);
                 }
-                return new RpcConnectionSocket(host, port, false);
+                return new RpcConnectionSocket(host, port, (type & RpcConstValue.CONNECTION_SSL) != 0);
             }
             return null;
         }

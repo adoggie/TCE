@@ -1313,15 +1313,18 @@ def createCodeInterface(e,sw,idt,idx):
 
 	#??invoke()??
 	sw.writeln("@Override")
-	sw.writeln("public boolean invoke(RpcMessage m){").idt_inc()
+	# sw.writeln("public boolean invoke(RpcMessage m){").idt_inc()
+	sw.writeln("public RpcMessage invoke(RpcMessage m) throws Exception{").idt_inc()
+
 #	sw.writeln('boolean r=false;')
 #	sw.writeln('RpcMessageXML m = (RpcMessageXML)m_;')
+	sw.writeln('RpcMessage mr = null;')
 	for opidx,m in enumerate(e.list):
 		opidx = m.index
 		sw.writeln('if(m.opidx == %s ){'%opidx).idt_inc()
-		sw.writeln('return func_%s_delegate(m);'%opidx )
+		sw.writeln('mr = func_%s_delegate(m);'%opidx )
 		sw.scope_end()
-	sw.writeln('return false;')
+	sw.writeln('return mr;')
 	sw.scope_end() # end - invoke()
 	sw.wln()
 
@@ -1329,10 +1332,10 @@ def createCodeInterface(e,sw,idt,idx):
 	for opidx,m in enumerate(e.list): # function list
 		opidx = m.index
 		sw.writeln('// func: %s'%m.name)
-		sw.writeln('boolean func_%s_delegate(RpcMessage m){'%(opidx) ).idt_inc()
+		sw.writeln('RpcMessage func_%s_delegate(RpcMessage m) throws Exception{'%(opidx) ).idt_inc()
 		params=[ ]
-		sw.writeln('boolean r= false;')
-		sw.writeln('r = false;')
+		# sw.writeln('boolean r= false;')
+		# sw.writeln('r = false;')
 		if m.params:
 			sw.writeln('ByteBuffer d = ByteBuffer.wrap(m.paramstream);')
 		for p in m.params:
@@ -1376,28 +1379,31 @@ def createCodeInterface(e,sw,idt,idx):
 
 
 		sw.writeln("if( (m.calltype & tce.RpcMessage.ONEWAY) !=0 ){").idt_inc()
-		sw.writeln("return true;") #?????????
+		# sw.writeln("return true;") #?????????
+		sw.writeln("return null;") #?????????
 		sw.scope_end()
 
 		sw.wln()
 		#?????
 #
+		sw.define_var('mr','RpcMessage','new RpcMessage(RpcMessage.RETURN)')
+		sw.writeln('mr.sequence = m.sequence;')
+		sw.writeln('mr.callmsg = m;')
+		sw.writeln('mr.conn = m.conn;')
+		sw.writeln('mr.ifidx = m.ifidx;')
+		sw.writeln('mr.call_id = m.call_id;')
+		sw.writeln('if(m.extra.getProperties().containsKey("__user_id__")){').idt_inc()
+		sw.writeln('mr.extra.setPropertyValue("__user_id__",m.extra.getPropertyValue("__user_id__"));')
+		sw.scope_end()
+
 		if m.type.name !='void':
-			sw.define_var('mr','RpcMessage','new RpcMessage(RpcMessage.RETURN)')
-			sw.writeln('mr.sequence = m.sequence;')
-			sw.writeln('mr.callmsg = m;')
-			sw.writeln('mr.conn = m.conn;')
-			sw.writeln('mr.ifidx = m.ifidx;')
-			sw.writeln('mr.call_id = m.call_id;')
-			sw.writeln('if(m.extra.getProperties().containsKey("__user_id__")){').idt_inc()
-			sw.writeln('mr.extra.setPropertyValue("__user_id__",m.extra.getPropertyValue("__user_id__"));')
-			sw.scope_end()
+
 
 
 
 	#		sw.writeln("m.sequence = ctx.msg.sequence;") #???????????????
 	#
-			sw.writeln('try{').idt_inc()
+			# sw.writeln('try{').idt_inc()
 			sw.writeln('ByteArrayOutputStream bos = new ByteArrayOutputStream();')
 			sw.writeln('DataOutputStream dos = new DataOutputStream(bos);')
 #			sw.writeln('String xml="";')
@@ -1418,13 +1424,15 @@ def createCodeInterface(e,sw,idt,idx):
 				sw.writeln("cr.marshall(dos);")
 			sw.writeln('mr.paramsize = 1;')
 			sw.writeln('mr.paramstream = bos.toByteArray();')
-			sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
-			sw.writeln('r = false;')
-			sw.writeln('return r;')
-			sw.scope_end()
 
-			sw.writeln("r =m.conn.sendMessage(mr);") #????
-		sw.writeln("return r;")
+			# sw.idt_dec().writeln('}catch(Exception e){').idt_inc()
+			# sw.writeln('r = false;')
+			# sw.writeln('return r;')
+			# sw.scope_end()
+
+			# sw.writeln("r =m.conn.sendMessage(mr);") #????
+		# sw.writeln("return r;")
+		sw.writeln("return mr;")
 
 		sw.scope_end() # end servant function{}
 		sw.wln()

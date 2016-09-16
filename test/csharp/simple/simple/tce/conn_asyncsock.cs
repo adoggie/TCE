@@ -24,6 +24,11 @@ namespace Tce {
             
         }
 
+        public RpcConnectionAsyncSocket(string host, int port, bool ssl)
+            : this(new RpcEndpointSocket(host, port, ssl)){
+         
+        }
+
         protected override void onDisconnected() {
             base.onDisconnected();
             _unsent_msglist.Clear();
@@ -79,8 +84,9 @@ namespace Tce {
                 if (_status == ConnectStatus.STOPPED) {
                     connect();
                 }
+                return true;
             }
-            
+            sendBufferredMsg();
             return true;
         }
 

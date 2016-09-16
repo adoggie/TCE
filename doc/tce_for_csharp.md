@@ -297,7 +297,7 @@ tce将为proxy对象自动生成调用服务接口的异步函数 xxxx_async(...
 	    }
 
 
-异步调用: 
+####4.2 异步调用: 
 	
 	RpcProxy proxy = ServerProxy.create(conn);
 	proxy.echo_async("hello",delegate(string result,RpcProxy proxy,object cookie){
@@ -305,5 +305,26 @@ tce将为proxy对象自动生成调用服务接口的异步函数 xxxx_async(...
 	},null,"1001");
 		
 	
-       
-    
+####4.3 Promise
+
+    void async_call() {
+        RpcPromise p = new RpcPromise();
+        p.then(_ => {
+            prx.echo_async("this is a sync text",
+                delegate(string result, RpcAsyncContext ctx) {
+                    Console.WriteLine("echo() result:" + result);
+                    ctx.promise.data = result;
+                    _.promise.onNext(ctx);
+                }, _.promise);
+        }).then(_ => {
+            prx.timeout_async(1000, delegate(RpcAsyncContext ctx) {
+                Console.WriteLine("timeout completed!");
+            });
+        }).error(_ => {
+            Console.WriteLine("async call error:"+ _.exception.ToString());
+            _.promise.onNext(_);
+        }).final(_ => {
+            Console.WriteLine(" commands be executed completed!");
+        });
+        p.end();
+    }
