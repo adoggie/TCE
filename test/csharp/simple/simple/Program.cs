@@ -41,16 +41,20 @@ namespace simple
                     delegate(string result, RpcAsyncContext ctx) {
                         Console.WriteLine("echo() result:" + result);
                         ctx.promise.data = result;
-                        _.promise.onNext(ctx);
+                        ctx.onNext();
+                        //ctx.again();
                     }, _.promise);
             }).then(_ => {
-                prx.timeout_async(1000, delegate(RpcAsyncContext ctx) {
+                prx.timeout_async(1, delegate(RpcAsyncContext ctx) {
                     Console.WriteLine("timeout completed!");
-                });
-            }).error(_ => {
+                    ctx.onNext();    
+                },_.promise);                
+            });
+            RpcPromise pe = p.error(_ => {
                 Console.WriteLine("async call error:"+ _.exception.ToString());
-                _.promise.onNext(_);
-            }).final(_ => {
+                _.onNext();
+            });
+            p.final(_ => {
                 Console.WriteLine(" commands be executed completed!");
             });
             p.end();
@@ -121,7 +125,7 @@ namespace simple
             //return;
 
             program.init();
-            for (int n = 0; n < 1; n++) {
+            for (int n = 0; n < 100; n++) {
                 //program.two_way();
                 //program.one_way();
                 program.async_call();

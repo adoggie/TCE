@@ -5,6 +5,7 @@ import os,os.path,sys,struct,time,traceback,signal,threading
 sys.path.insert(0,'../../../../python')
 import tcelib as tce
 from test import *
+import gevent
 
 
 class ServerImpl(Server):
@@ -18,7 +19,8 @@ class ServerImpl(Server):
 
 	def timeout(self,secs,ctx):
 		print 'enter timeout:',secs
-		time.sleep( secs)
+		gevent.sleep( secs)
+
 
 	def heartbeat(self,hello,ctx):
 		print ctx.msg.extra.props

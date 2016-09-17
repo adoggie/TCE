@@ -314,16 +314,19 @@ tce将为proxy对象自动生成调用服务接口的异步函数 xxxx_async(...
                 delegate(string result, RpcAsyncContext ctx) {
                     Console.WriteLine("echo() result:" + result);
                     ctx.promise.data = result;
-                    _.promise.onNext(ctx);
+                    ctx.onNext();
                 }, _.promise);
         }).then(_ => {
-            prx.timeout_async(1000, delegate(RpcAsyncContext ctx) {
+            prx.timeout_async(1, delegate(RpcAsyncContext ctx) {
                 Console.WriteLine("timeout completed!");
-            });
-        }).error(_ => {
+                ctx.onNext();    
+            },_.promise);                
+        });
+        RpcPromise pe = p.error(_ => {
             Console.WriteLine("async call error:"+ _.exception.ToString());
-            _.promise.onNext(_);
-        }).final(_ => {
+            _.onNext();
+        });
+        p.final(_ => {
             Console.WriteLine(" commands be executed completed!");
         });
         p.end();
