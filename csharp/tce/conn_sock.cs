@@ -150,7 +150,7 @@ namespace Tce {
             return hdrbBytes;
         }
 
-        class ReturnValue {
+        protected  class ReturnValue {
             public const int DATA_DIRTY = -1;
             public const int NEED_MORE = 0;
             public const int SUCC = 1;
@@ -168,7 +168,7 @@ namespace Tce {
             }
         }
 
-        private ReturnValue parsePacket(MemoryStream stream) {
+        protected ReturnValue parsePacket(MemoryStream stream) {
             /***
              *  magic,packet_size,compress,encrypt,version,content
              *  packet_size: all fields size except magic.

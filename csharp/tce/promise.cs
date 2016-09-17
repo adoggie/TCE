@@ -33,6 +33,7 @@ namespace Tce {
         private RpcPromise _upPromise;
         private RpcPromise _nextPromise;
         private OnNext _lastPoint;
+        private OnNext _currentNext;
 
         private int _id = 0;
         private static int seqID = 1;
@@ -66,13 +67,24 @@ namespace Tce {
                 OnNext next = null;
                 next = _sucesslist[0];
                 _sucesslist.RemoveAt(0);
+                _currentNext = next;
                 if ( next != null) {
                     next( ctx );
                 }                
             }
         }
 
+        /**
+         * repeate do current OnNext Action
+         */
+        public void again(RpcAsyncContext ctx) {
+            if (_currentNext != null) {
+                _currentNext(ctx);
+            }
+        }
+
         private void onFinally(RpcAsyncContext ctx) {
+            _currentNext = _finally;
             if (_finally != null) {
                 _finally(ctx);
             }
@@ -96,7 +108,7 @@ namespace Tce {
             // scan list and remove all nodes which's depth of node is less than promise. 
             int index = _sucesslist.IndexOf(succ);
             _sucesslist.RemoveRange(0, index + 1);
-
+           
             if (next != null) {
                 ctx.promise = next;
                 next.onNext(ctx);
@@ -156,14 +168,15 @@ namespace Tce {
         }
 
         public RpcPromise end() {
-            if(true){
-                if (_sucesslist.Count != 0) {
-                    OnNext step = _sucesslist[0];
-                    _sucesslist.RemoveAt(0);
-                    step( new RpcAsyncContext(null,this));
-                }
-                return this;
-            }
+
+            onNext(new RpcAsyncContext(null, this));
+            return this;
+            //if (_sucesslist.Count != 0) {
+            //    OnNext step = _sucesslist[0];
+            //    _sucesslist.RemoveAt(0);
+            //    step( new RpcAsyncContext(null,this));
+            //}
+            //return this;
         }
 
     }

@@ -42,6 +42,9 @@ namespace Tce {
 
         public RpcMessage(int calltype = UNDEFINED) {
             this.calltype = calltype;
+            if ((calltype & CALL) != 0){
+                sequence = RpcCommunicator.instance().getUniqueSequence();
+            }
         }
 
         //从二进制流中反序列化出对象RpcMessage

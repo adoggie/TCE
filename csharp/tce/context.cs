@@ -25,7 +25,17 @@ namespace Tce {
             
         }
 
-        
+        public void onNext() {
+            this.promise.onNext(this);
+        }
+
+        public void onError() {
+            this.promise.onError(this);
+        }
+
+        public void again() {
+            this.promise.again(this);
+        }
     }
 
 }
