@@ -1257,7 +1257,7 @@ class LanguagePython(object):
 	class Struct:
 		@classmethod
 		def defaultValue(cls,this,call_module):
-			return 'new %s()'%this.getTypeName(call_module)
+			return '%s()'%this.getTypeName(call_module)
 
 		@classmethod
 		def typeName(cls,this,call_module):
